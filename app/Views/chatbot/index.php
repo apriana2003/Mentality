@@ -22,15 +22,20 @@ main { height: calc(100vh - 72px); }
       <div class="fw-bold" style="font-size:.95rem">Mentality AI</div>
       <div style="font-size:.75rem;opacity:.7">Konselor & Asisten Kesehatan Mental</div>
     </div>
-    <div class="ms-auto d-flex gap-2">
+    <div class="ms-auto d-flex gap-2 align-items-center">
       <?php if ($hasilTes): ?>
-      <span class="badge" style="background:rgba(255,255,255,.2);font-size:.72rem;font-weight:600;padding:.4rem .8rem;border-radius:50px">
+      <span class="badge d-none d-md-inline-flex" style="background:rgba(255,255,255,.2);font-size:.72rem;font-weight:600;padding:.4rem .8rem;border-radius:50px">
         <i class="bi bi-clipboard2-check me-1"></i>Data DASS-21 Tersedia
       </span>
       <?php endif; ?>
       <a href="<?= base_url('form') ?>" class="btn btn-sm" style="background:rgba(255,255,255,.15);color:white;border-radius:50px;font-size:.78rem">
         <i class="bi bi-clipboard2-pulse me-1"></i>Tes Dulu
       </a>
+      <!-- Tombol Hapus Chat -->
+      <button id="clearChatBtn" onclick="clearChat()" class="btn btn-sm" title="Hapus semua percakapan"
+        style="background:rgba(255,80,80,.25);color:white;border:1px solid rgba(255,100,100,.4);border-radius:50px;font-size:.78rem">
+        <i class="bi bi-trash3 me-1"></i><span class="d-none d-md-inline">Hapus Chat</span>
+      </button>
     </div>
   </div>
 
@@ -94,8 +99,29 @@ main { height: calc(100vh - 72px); }
 
 </div>
 
+<!-- Modal Konfirmasi Hapus Chat -->
+<div class="modal fade" id="modalHapusChat" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content rounded-4 border-0 shadow-lg">
+      <div class="modal-body text-center p-4">
+        <div style="width:56px;height:56px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">
+          <i class="bi bi-trash3-fill text-danger fs-4"></i>
+        </div>
+        <h6 class="fw-bold mb-1">Hapus Semua Percakapan?</h6>
+        <p class="text-muted small mb-4">Riwayat chat akan dihapus permanen dan tidak bisa dikembalikan.</p>
+        <div class="d-flex gap-2">
+          <button class="btn btn-light flex-fill rounded-3" data-bs-dismiss="modal">Batal</button>
+          <button class="btn btn-danger flex-fill rounded-3" id="confirmClearBtn" onclick="confirmClearChat()">
+            <i class="bi bi-trash3 me-1"></i>Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-// Suggestion chip handler
+// ── Suggestion chip ───────────────────────────────────────
 function useSuggestion(btn) {
   const input = document.getElementById('chatInput');
   input.value = btn.textContent.trim();
@@ -104,10 +130,59 @@ function useSuggestion(btn) {
   Chatbot.send();
 }
 
-// Pastikan Chatbot sudah init setelah DOM ready
+// ── Hapus chat: tampilkan modal konfirmasi ────────────────
+function clearChat() {
+  const modal = new bootstrap.Modal(document.getElementById('modalHapusChat'));
+  modal.show();
+}
+
+// ── Konfirmasi hapus: panggil endpoint + reset UI ─────────
+async function confirmClearChat() {
+  const btn = document.getElementById('confirmClearBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menghapus...';
+
+  try {
+    const res = await fetch(BASE_URL + 'chatbot/clear', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      // Tutup modal
+      bootstrap.Modal.getInstance(document.getElementById('modalHapusChat')).hide();
+
+      // Bersihkan tampilan pesan
+      const container = document.getElementById('chatMessages');
+      container.innerHTML = '';
+
+      // Reset session chatbot di JS
+      Chatbot.sessionToken = null;
+      Chatbot._initialized = false;
+
+      // Tampilkan kembali suggestion chips
+      document.getElementById('suggestionChips').style.display = 'flex';
+
+      // Tampilkan pesan sambutan ulang
+      Chatbot.appendMessage('ai', 'Chat telah dihapus. Halo lagi! 👋 Ada yang ingin kamu ceritakan?');
+    } else {
+      alert('Gagal menghapus chat. Coba lagi.');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('Terjadi kesalahan. Coba lagi.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-trash3 me-1"></i>Hapus';
+  }
+}
+
+// ── Fallback init ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
-  // Chatbot.init() sudah dipanggil di mentality.js
-  // Tapi kalau tidak jalan, panggil lagi di sini sebagai fallback
   if (typeof Chatbot !== 'undefined' && !Chatbot._initialized) {
     Chatbot.init();
   }
