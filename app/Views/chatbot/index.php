@@ -1,10 +1,17 @@
 <?php $hasilTes = $hasilTes ?? null; ?>
+
+<!-- BASE_URL harus didefinisikan SEBELUM mentality.js diload -->
+<script>
+  const BASE_URL = '<?= base_url() ?>';
+</script>
+
 <style>
 body { overflow: hidden; }
 main { height: calc(100vh - 72px); }
 </style>
 
 <div class="chat-wrapper">
+
   <!-- Header -->
   <div class="chat-header">
     <div class="position-relative">
@@ -31,14 +38,16 @@ main { height: calc(100vh - 72px); }
   <?php if ($hasilTes): ?>
   <div style="background:var(--green-pale);padding:.75rem 1.5rem;border-bottom:1px solid var(--gray-200)">
     <div class="d-flex align-items-center gap-3 flex-wrap">
-      <span style="font-size:.8rem;font-weight:700;color:var(--green-main)"><i class="bi bi-info-circle me-1"></i>Hasil tes kamu telah diketahui AI:</span>
+      <span style="font-size:.8rem;font-weight:700;color:var(--green-main)">
+        <i class="bi bi-info-circle me-1"></i>Hasil tes kamu telah diketahui AI:
+      </span>
       <?php foreach([
-        ['Depresi',$hasilTes['kategori_depresi'],$hasilTes['skor_depresi']],
-        ['Kecemasan',$hasilTes['kategori_kecemasan'],$hasilTes['skor_kecemasan']],
-        ['Stres',$hasilTes['kategori_stres'],$hasilTes['skor_stres']],
+        ['Depresi',   $hasilTes['kategori_depresi'],   $hasilTes['skor_depresi']],
+        ['Kecemasan', $hasilTes['kategori_kecemasan'], $hasilTes['skor_kecemasan']],
+        ['Stres',     $hasilTes['kategori_stres'],     $hasilTes['skor_stres']],
       ] as $r): ?>
       <span class="badge" style="background:white;color:var(--gray-800);border:1px solid var(--gray-200);font-size:.75rem;font-weight:600;padding:.3rem .7rem">
-        <?= $r[0] ?>: <strong class="text-green-main"><?= $r[1] ?></strong> (<?= $r[2] ?>)
+        <?= $r[0] ?>: <strong class="text-green-main"><?= esc($r[1]) ?></strong> (<?= $r[2] ?>)
       </span>
       <?php endforeach; ?>
     </div>
@@ -47,7 +56,7 @@ main { height: calc(100vh - 72px); }
 
   <!-- Messages -->
   <div class="chat-messages" id="chatMessages">
-    <!-- Pesan diisi oleh JavaScript -->
+    <!-- Diisi oleh JavaScript -->
   </div>
 
   <!-- Suggestion chips -->
@@ -60,16 +69,21 @@ main { height: calc(100vh - 72px); }
     ] as $chip): ?>
     <button class="btn btn-sm suggestion-chip" onclick="useSuggestion(this)"
       style="background:var(--green-pale);color:var(--green-main);border:none;border-radius:50px;font-size:.78rem;font-weight:600;padding:.3rem .85rem">
-      <?= $chip ?>
+      <?= esc($chip) ?>
     </button>
     <?php endforeach; ?>
   </div>
 
-  <!-- Input -->
+  <!-- Input area -->
   <div class="chat-input-area">
     <div class="chat-input-wrap">
-      <textarea id="chatInput" class="chat-input" placeholder="Ketik pesanmu di sini..." rows="1"></textarea>
-      <button id="sendBtn" class="chat-send-btn" title="Kirim">
+      <textarea
+        id="chatInput"
+        class="chat-input"
+        placeholder="Ketik pesanmu di sini... (Enter = kirim, Shift+Enter = baris baru)"
+        rows="1"
+      ></textarea>
+      <button id="sendBtn" class="chat-send-btn" title="Kirim pesan">
         <i class="bi bi-send-fill"></i>
       </button>
     </div>
@@ -77,15 +91,25 @@ main { height: calc(100vh - 72px); }
       <i class="bi bi-shield-lock me-1"></i>Percakapan ini aman & anonim. AI bukan pengganti psikiater profesional.
     </p>
   </div>
+
 </div>
 
 <script>
-const BASE_URL = '<?= base_url() ?>';
-
+// Suggestion chip handler
 function useSuggestion(btn) {
   const input = document.getElementById('chatInput');
   input.value = btn.textContent.trim();
   document.getElementById('suggestionChips').style.display = 'none';
+  input.focus();
   Chatbot.send();
 }
+
+// Pastikan Chatbot sudah init setelah DOM ready
+document.addEventListener('DOMContentLoaded', function () {
+  // Chatbot.init() sudah dipanggil di mentality.js
+  // Tapi kalau tidak jalan, panggil lagi di sini sebagai fallback
+  if (typeof Chatbot !== 'undefined' && !Chatbot._initialized) {
+    Chatbot.init();
+  }
+});
 </script>

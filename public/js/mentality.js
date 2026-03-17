@@ -62,10 +62,13 @@ document.addEventListener('DOMContentLoaded', function () {
 const Chatbot = {
   sessionToken: null,
   isTyping: false,
+  _initialized: false,
 
   async init() {
-    const wrapper = document.getElementById('chatWrapper');
-    if (!wrapper) return;
+    const container = document.getElementById('chatMessages');
+    if (!container) return; // Bukan halaman chatbot, skip
+    if (this._initialized) return; // Jangan init 2x
+    this._initialized = true;
 
     try {
       const res  = await fetch(BASE_URL + 'chatbot/session');
