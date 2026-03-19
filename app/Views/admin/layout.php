@@ -284,7 +284,7 @@
     <?php endforeach; ?>
 
     <!-- Page content -->
-    <div class="admin-content">
+    <div class="container-fluid">
       <?= $content ?>
     </div>
 

@@ -1,3 +1,8 @@
+<?php
+$fields = $fields ?? [];
+// Cek apakah ada sesi sebelumnya (dari localStorage yang dikirim via JS)
+?>
+
 <section class="form-section">
   <div class="container">
     <div class="row justify-content-center">
@@ -29,12 +34,21 @@
           <!-- Body -->
           <div class="form-card-body">
 
+            <?php if (empty($fields)): ?>
+            <!-- Pesan jika field kosong -->
+            <div class="alert alert-warning rounded-3">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              Form belum dikonfigurasi. Silakan hubungi administrator.
+            </div>
+
+            <?php else: ?>
+
             <!-- Validation errors -->
-            <?php if (session()->getFlashdata('errors')): ?>
+            <?php if ($errs = session()->getFlashdata('errors')): ?>
             <div class="alert alert-danger rounded-3 mb-4">
               <strong><i class="bi bi-exclamation-triangle me-2"></i>Harap perbaiki:</strong>
               <ul class="mb-0 mt-1">
-                <?php foreach((array)session()->getFlashdata('errors') as $err): ?>
+                <?php foreach((array)$errs as $err): ?>
                 <li><?= esc($err) ?></li>
                 <?php endforeach; ?>
               </ul>
@@ -45,55 +59,76 @@
               <?= csrf_field() ?>
 
               <div class="row g-3">
-                <div class="col-12">
-                  <label class="form-label-mentality">Nama Lengkap <span class="text-danger">*</span></label>
-                  <input type="text" name="nama" class="form-control form-control-mentality"
-                    placeholder="Contoh: Budi Santoso"
-                    value="<?= esc(old('nama')) ?>" required>
-                </div>
+                <?php foreach ($fields as $field):
+                  $name        = esc($field['name']);
+                  $label       = esc($field['label']);
+                  $type        = $field['type'];
+                  $placeholder = esc($field['placeholder'] ?? '');
+                  $required    = (bool)$field['required'];
+                  $oldVal      = esc(old($field['name']) ?? '');
+                  $options     = $field['options'] ? json_decode($field['options'], true) : [];
 
-                <div class="col-12">
-                  <label class="form-label-mentality">Alamat Email <span class="text-danger">*</span></label>
-                  <input type="email" name="email" class="form-control form-control-mentality"
-                    placeholder="contoh@email.com"
-                    value="<?= esc(old('email')) ?>" required>
-                </div>
+                  // Kolom setengah untuk nim & usia
+                  $colClass = in_array($field['name'], ['nim','usia']) ? 'col-md-6' : 'col-12';
+                ?>
+                <div class="<?= $colClass ?>">
+                  <label class="form-label-mentality" for="field_<?= $name ?>">
+                    <?= $label ?>
+                    <?php if ($required): ?><span class="text-danger ms-1">*</span><?php endif; ?>
+                    <?php if (!$required): ?><span class="text-muted ms-1" style="font-size:.75rem">(Opsional)</span><?php endif; ?>
+                  </label>
 
-                <div class="col-md-6">
-                  <label class="form-label-mentality">NIM (Opsional)</label>
-                  <input type="text" name="nim" class="form-control form-control-mentality"
-                    placeholder="Nomor Induk Mahasiswa"
-                    value="<?= esc(old('nim')) ?>">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label-mentality">Usia <span class="text-danger">*</span></label>
-                  <input type="number" name="usia" class="form-control form-control-mentality"
-                    placeholder="Usia dalam tahun" min="15" max="99"
-                    value="<?= esc(old('usia')) ?>" required>
-                </div>
-
-                <div class="col-12">
-                  <label class="form-label-mentality">Perguruan Tinggi (Opsional)</label>
-                  <input type="text" name="universitas" class="form-control form-control-mentality"
-                    placeholder="Nama universitas / kampus kamu"
-                    value="<?= esc(old('universitas')) ?>">
-                </div>
-
-                <div class="col-12">
-                  <label class="form-label-mentality">Jenis Kelamin <span class="text-danger">*</span></label>
-                  <div class="d-flex gap-3 mt-1">
-                    <?php foreach([['L','Laki-laki','bi-gender-male'],['P','Perempuan','bi-gender-female']] as $jk): ?>
-                    <div class="flex-fill">
-                      <input type="radio" name="jenis_kelamin" id="jk_<?= $jk[0] ?>" value="<?= $jk[0] ?>"
-                        class="d-none jk-radio" <?= old('jenis_kelamin') == $jk[0] ? 'checked' : '' ?> required>
-                      <label for="jk_<?= $jk[0] ?>" class="jk-label d-flex align-items-center justify-content-center gap-2 p-3 rounded-3 border fw-semibold" style="cursor:pointer;transition:all .2s">
-                        <i class="bi <?= $jk[2] ?>"></i><?= $jk[1] ?>
+                  <?php if ($type === 'radio' && !empty($options)): ?>
+                  <!-- Radio buttons -->
+                  <div class="d-flex gap-3 mt-1 flex-wrap">
+                    <?php foreach ($options as $opt): ?>
+                    <div class="flex-fill" style="min-width:120px">
+                      <input type="radio" name="<?= $name ?>" id="<?= $name ?>_<?= esc(str_replace(' ','_',$opt)) ?>"
+                        value="<?= esc($opt) ?>" class="d-none radio-custom"
+                        <?= old($field['name']) === $opt ? 'checked' : '' ?>
+                        <?= $required ? 'required' : '' ?>>
+                      <label for="<?= $name ?>_<?= esc(str_replace(' ','_',$opt)) ?>"
+                        class="d-flex align-items-center justify-content-center gap-2 p-3 rounded-3 border fw-semibold"
+                        style="cursor:pointer;transition:all .2s;font-size:.88rem">
+                        <?= esc($opt) ?>
                       </label>
                     </div>
                     <?php endforeach; ?>
                   </div>
+
+                  <?php elseif ($type === 'select' && !empty($options)): ?>
+                  <!-- Select dropdown -->
+                  <select name="<?= $name ?>" id="field_<?= $name ?>"
+                    class="form-select form-control-mentality"
+                    <?= $required ? 'required' : '' ?>>
+                    <option value="">-- Pilih <?= $label ?> --</option>
+                    <?php foreach ($options as $opt): ?>
+                    <option value="<?= esc($opt) ?>" <?= old($field['name']) === $opt ? 'selected' : '' ?>>
+                      <?= esc($opt) ?>
+                    </option>
+                    <?php endforeach; ?>
+                  </select>
+
+                  <?php elseif ($type === 'textarea'): ?>
+                  <!-- Textarea -->
+                  <textarea name="<?= $name ?>" id="field_<?= $name ?>"
+                    class="form-control form-control-mentality"
+                    placeholder="<?= $placeholder ?>"
+                    rows="3"
+                    <?= $required ? 'required' : '' ?>><?= $oldVal ?></textarea>
+
+                  <?php else: ?>
+                  <!-- Text / Email / Number -->
+                  <input type="<?= $type ?>" name="<?= $name ?>" id="field_<?= $name ?>"
+                    class="form-control form-control-mentality"
+                    placeholder="<?= $placeholder ?>"
+                    value="<?= $oldVal ?>"
+                    <?= $type === 'number' ? 'min="1" max="99"' : '' ?>
+                    <?= $required ? 'required' : '' ?>>
+                  <?php endif; ?>
+
                 </div>
+                <?php endforeach; ?>
               </div>
 
               <!-- Info privasi -->
@@ -107,18 +142,21 @@
               </button>
             </form>
 
-          </div>
-        </div>
+            <?php endif; ?>
+
+          </div><!-- end form-card-body -->
+        </div><!-- end form-card -->
+
       </div>
     </div>
   </div>
 </section>
 
 <style>
-.jk-radio:checked + .jk-label {
+.radio-custom:checked + label {
   background: var(--green-pale);
   border-color: var(--green-main) !important;
   color: var(--green-main);
 }
-.jk-label:hover { border-color: var(--green-main) !important; }
+.radio-custom + label:hover { border-color: var(--green-main) !important; }
 </style>
