@@ -17,6 +17,12 @@ class ChatbotController extends BaseController
         $this->hasilModel = new HasilTesModel();
     }
 
+    // ── Validasi request AJAX ─────────────────────────────────
+    private function isAjax(): bool
+    {
+        return $this->request->getHeaderLine('X-Requested-With') === 'XMLHttpRequest';
+    }
+
     // ── Halaman chatbot ───────────────────────────────────────
     public function index(): string
     {
@@ -53,11 +59,26 @@ class ChatbotController extends BaseController
     // ── Kirim pesan & balas dengan AI (AJAX POST) ─────────────
     public function send(): \CodeIgniter\HTTP\ResponseInterface
     {
+        // Pastikan hanya AJAX yang bisa akses
+        if (!$this->isAjax()) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'error' => 'Akses tidak diizinkan.'
+            ]);
+        }
+
         $json    = $this->request->getJSON(true);
         $userMsg = trim($json['message'] ?? '');
 
-        if (empty($userMsg) || strlen($userMsg) > 2000) {
-            return $this->response->setJSON(['error' => 'Pesan tidak valid.'], 400);
+        if (empty($userMsg)) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'error' => 'Pesan tidak boleh kosong.'
+            ]);
+        }
+
+        if (strlen($userMsg) > 2000) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'error' => 'Pesan terlalu panjang (maks 2000 karakter).'
+            ]);
         }
 
         // Sanitasi XSS
@@ -75,13 +96,15 @@ class ChatbotController extends BaseController
 
         $session = $this->chatModel->getByToken($sessionToken);
         if (!$session) {
-            return $this->response->setJSON(['error' => 'Sesi tidak ditemukan.'], 404);
+            return $this->response->setStatusCode(404)->setJSON([
+                'error' => 'Sesi tidak ditemukan.'
+            ]);
         }
 
         // Simpan pesan user
         $this->chatModel->addMessage($session['id'], 'user', $userMsg);
 
-        // Ambil riwayat (maks 20 pesan terakhir)
+        // Ambil riwayat (maks 20 pesan terakhir agar tidak overflow token)
         $allMessages = $this->chatModel->getMessages($session['id']);
         $history = array_slice(
             array_map(fn($m) => ['role' => $m['role'], 'content' => $m['content']], $allMessages),
@@ -107,12 +130,17 @@ class ChatbotController extends BaseController
     // ── Hapus semua pesan dalam sesi (AJAX POST) ──────────────
     public function clear(): \CodeIgniter\HTTP\ResponseInterface
     {
+        if (!$this->isAjax()) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'error' => 'Akses tidak diizinkan.'
+            ]);
+        }
+
         $sessionToken = session()->get('chat_token');
 
         if ($sessionToken) {
             $session = $this->chatModel->getByToken($sessionToken);
             if ($session) {
-                // Hapus semua pesan dalam sesi ini
                 $db = \Config\Database::connect();
                 $db->table('chat_messages')
                    ->where('session_id', $session['id'])
@@ -120,7 +148,6 @@ class ChatbotController extends BaseController
             }
         }
 
-        // Hapus token dari session PHP agar sesi baru dibuat saat chat berikutnya
         session()->remove('chat_token');
 
         return $this->response->setJSON(['success' => true]);

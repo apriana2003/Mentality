@@ -160,3 +160,22 @@ $colorMap = ['Normal'=>'success','Ringan'=>'warning','Sedang'=>'orange','Berat'=
     </div>
   </div>
 </section>
+
+<!-- Simpan hasil tes ke localStorage otomatis -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof SesiManager !== 'undefined') {
+    SesiManager.saveAfterTes(
+      <?= (int)$hasil['mahasiswa_id'] ?>,
+      '<?= esc(addslashes($hasil['nama'])) ?>',
+      <?= (int)$hasil['id'] ?>,
+      <?= (int)$hasil['skor_depresi'] ?>,
+      <?= (int)$hasil['skor_kecemasan'] ?>,
+      <?= (int)$hasil['skor_stres'] ?>,
+      '<?= esc($hasil['kategori_depresi']) ?>',
+      '<?= esc($hasil['kategori_kecemasan']) ?>',
+      '<?= esc($hasil['kategori_stres']) ?>'
+    );
+  }
+});
+</script>
