@@ -25,13 +25,15 @@ $routes->get('/blogs/(:segment)',    'BlogsController::detail/$1');
 
 // ── Admin routes ─────────────────────────────────────────────
 $routes->group('admin', ['filter' => 'adminAuth'], function($routes) {
-    $routes->get('/',                     'AdminController::dashboard');
-    $routes->get('/mahasiswa',            'AdminController::mahasiswa');
-    $routes->get('/hasil-tes',            'AdminController::hasilTes');
-    $routes->get('/security-logs',        'AdminController::securityLogs');
-    $routes->get('/blogs',                'AdminController::blogs');
-    $routes->post('/blogs/save',          'AdminController::blogsSave');
-    $routes->get('/blogs/delete/(:num)',  'AdminController::blogsDelete/$1');
+    $routes->get('/',                           'AdminController::dashboard');
+    $routes->get('/mahasiswa',                  'AdminController::mahasiswa');
+    $routes->get('/mahasiswa/(:num)',            'AdminController::respondenDetail/$1');
+    $routes->get('/mahasiswa/delete/(:num)',     'AdminController::respondenDelete/$1');
+    $routes->get('/hasil-tes',                  'AdminController::hasilTes');
+    $routes->get('/security-logs',              'AdminController::securityLogs');
+    $routes->get('/blogs',                      'AdminController::blogs');
+    $routes->post('/blogs/save',                'AdminController::blogsSave');
+    $routes->get('/blogs/delete/(:num)',        'AdminController::blogsDelete/$1');
 });
 $routes->get('/admin/login',         'AdminController::login');
 $routes->post('/admin/login',        'AdminController::doLogin');
