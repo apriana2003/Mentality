@@ -11,13 +11,15 @@ use App\Models\SecurityLogModel;
 class AdminController extends BaseController
 {
     // ── Login ─────────────────────────────────────────────────
-    public function login(): string
-    {
-        if (session()->get('admin_logged_in')) {
-            return redirect()->to('/admin');
-        }
-        return view('admin/login', ['title' => 'Login Admin - Mentality']);
+    // SEBELUM: public function login(): string
+// SESUDAH:
+public function login(): string|\CodeIgniter\HTTP\ResponseInterface
+{
+    if (session()->get('admin_logged_in')) {
+        return redirect()->to('/admin');
     }
+    return view('admin/login', ['title' => 'Login Admin - Mentality']);
+}
 
     public function doLogin(): \CodeIgniter\HTTP\ResponseInterface
     {
@@ -124,24 +126,28 @@ class AdminController extends BaseController
     }
 
     // ── Detail Responden ──────────────────────────────────────
-    public function respondenDetail(int $id): string
-    {
-        $db = \Config\Database::connect();
+   public function respondenDetail(int $id): string|\CodeIgniter\HTTP\ResponseInterface
+{
+    $db = \Config\Database::connect();
 
-        $responden = $db->table('mahasiswa')->where('id', $id)->get()->getRowArray();
-        if (!$responden) return redirect()->to('/admin/mahasiswa')->with('error', 'Data tidak ditemukan.');
-
-        $riwayatTes = $db->table('hasil_tes')
-            ->where('mahasiswa_id', $id)
-            ->orderBy('created_at', 'DESC')
-            ->get()->getResultArray();
-
-        return view('admin/layout', [
-            'content'    => view('admin/responden_detail', compact('responden','riwayatTes')),
-            'title'      => 'Detail Responden - Admin Mentality',
-            'activePage' => 'responden',
-        ]);
+    $responden = $db->table('mahasiswa')->where('id', $id)->get()->getRowArray();
+    
+    // Bagian ini yang menyebabkan error jika tetap menggunakan : string
+    if (!$responden) {
+        return redirect()->to('/admin/mahasiswa')->with('error', 'Data tidak ditemukan.');
     }
+
+    $riwayatTes = $db->table('hasil_tes')
+        ->where('mahasiswa_id', $id)
+        ->orderBy('created_at', 'DESC')
+        ->get()->getResultArray();
+
+    return view('admin/layout', [
+        'content'    => view('admin/responden_detail', compact('responden','riwayatTes')),
+        'title'      => 'Detail Responden - Admin Mentality',
+        'activePage' => 'responden',
+    ]);
+}
 
     // ── Hapus Responden ───────────────────────────────────────
     public function respondenDelete(int $id): \CodeIgniter\HTTP\ResponseInterface

@@ -25,16 +25,15 @@ class Filters extends BaseFilters
      * or [filter_name => [classname1, classname2, ...]]
      */
     public array $aliases = [
-        'csrf'          => CSRF::class,
-        'toolbar'       => DebugToolbar::class,
-        'honeypot'      => Honeypot::class,
-        'invalidchars'  => InvalidChars::class,
-        'secureheaders' => SecureHeaders::class,
-        'cors'          => Cors::class,
-        'forcehttps'    => ForceHTTPS::class,
-        'pagecache'     => PageCache::class,
-        'performance'   => PerformanceMetrics::class,
-    ];
+    'csrf'          => \CodeIgniter\Filters\CSRF::class,
+    'toolbar'       => \CodeIgniter\Filters\DebugToolbar::class,
+    'honeypot'      => \CodeIgniter\Filters\Honeypot::class,
+    'forcehttps'    => \CodeIgniter\Filters\ForceHTTPS::class,
+    'pagecache'     => \CodeIgniter\Filters\PageCache::class,        // Tambahkan ini
+    'performance'   => \CodeIgniter\Filters\PerformanceMetrics::class, // Tambahkan ini
+    'security'      => \App\Filters\SecurityFilter::class, // Pastikan namespace benar
+    'adminAuth'     => \App\Filters\AdminAuthFilter::class, // Pastikan namespace benar
+];
 
     /**
      * List of special required filters.
@@ -50,16 +49,16 @@ class Filters extends BaseFilters
      * @var array{before: list<string>, after: list<string>}
      */
     public array $required = [
-        'before' => [
-            'forcehttps', // Force Global Secure Requests
-            'pagecache',  // Web Page Caching
-        ],
-        'after' => [
-            'pagecache',   // Web Page Caching
-            'performance', // Performance Metrics
-            'toolbar',     // Debug Toolbar
-        ],
-    ];
+    'before' => [
+        // 'forcehttps', // Matikan dulu di localhost
+        'pagecache',
+    ],
+    'after' => [
+        'pagecache',
+        'performance',
+        'toolbar',
+    ],
+];
 
     /**
      * List of filter aliases that are always
@@ -72,16 +71,13 @@ class Filters extends BaseFilters
      */
     public array $globals = [
         'before' => [
-            // 'honeypot',
-            // 'csrf',
-            // 'invalidchars',
+            'honeypot',
+            // 'security', // ← aktifkan kalau mau security filter global
         ],
         'after' => [
-            // 'honeypot',
-            // 'secureheaders',
+            'toolbar',
         ],
     ];
-
     /**
      * List of filter aliases that works on a
      * particular HTTP method (GET, POST, etc.).
@@ -106,5 +102,5 @@ class Filters extends BaseFilters
      *
      * @var array<string, array<string, list<string>>>
      */
-    public array $filters = [];
+    public array $filters = ['csrf' => ['before' => ['admin/*', 'form/*', 'tes/*', 'chatbot/*']],];
 }
