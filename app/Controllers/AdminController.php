@@ -7,27 +7,28 @@ use App\Models\MahasiswaModel;
 use App\Models\HasilTesModel;
 use App\Models\BlogModel;
 use App\Models\SecurityLogModel;
+use App\Models\FormFieldModel;
 
 class AdminController extends BaseController
 {
-    // ── Login ─────────────────────────────────────────────────
-    // SEBELUM: public function login(): string
-// SESUDAH:
-public function login(): string|\CodeIgniter\HTTP\ResponseInterface
-{
-    if (session()->get('admin_logged_in')) {
-        return redirect()->to('/admin');
+    // ══════════════════════════════════════════════════════════
+    // AUTH
+    // ══════════════════════════════════════════════════════════
+
+    public function login(): string
+    {
+        if (session()->get('admin_logged_in')) {
+            return redirect()->to('/admin');
+        }
+        return view('admin/login', ['title' => 'Login Admin - Mentality']);
     }
-    return view('admin/login', ['title' => 'Login Admin - Mentality']);
-}
 
     public function doLogin(): \CodeIgniter\HTTP\ResponseInterface
     {
         $email    = $this->request->getPost('email');
         $password = $this->request->getPost('password');
 
-        $adminModel = new AdminModel();
-        $admin      = $adminModel->where('email', $email)->first();
+        $admin = (new AdminModel())->where('email', $email)->first();
 
         if (!$admin || !password_verify($password, $admin['password'])) {
             return redirect()->back()->withInput()
@@ -50,55 +51,50 @@ public function login(): string|\CodeIgniter\HTTP\ResponseInterface
         return redirect()->to('/admin/login')->with('info', 'Berhasil logout.');
     }
 
-    // ── Dashboard ─────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════
+    // DASHBOARD
+    // ══════════════════════════════════════════════════════════
+
     public function dashboard(): string
     {
-        $mahasiswaModel = new MahasiswaModel();
-        $hasilModel     = new HasilTesModel();
-        $secModel       = new SecurityLogModel();
-        $blogModel      = new BlogModel();
+        $db = \Config\Database::connect();
 
-        // Statistik ringkasan
         $stats = [
-            'total_responden' => $mahasiswaModel->countAll(),
-            'total_tes'       => $hasilModel->countAll(),
-            'total_blogs'     => $blogModel->where('published', 1)->countAllResults(),
-            'total_threats'   => $secModel->countAll(),
+            'total_responden' => (new MahasiswaModel())->countAll(),
+            'total_tes'       => (new HasilTesModel())->countAll(),
+            'total_blogs'     => (new BlogModel())->where('published', 1)->countAllResults(),
+            'total_threats'   => (new SecurityLogModel())->countAll(),
         ];
 
-        // Distribusi kategori
-        $db = \Config\Database::connect();
         $distribusi = [
             'depresi'   => $db->query("SELECT kategori_depresi as kategori, COUNT(*) as total FROM hasil_tes GROUP BY kategori_depresi")->getResultArray(),
             'kecemasan' => $db->query("SELECT kategori_kecemasan as kategori, COUNT(*) as total FROM hasil_tes GROUP BY kategori_kecemasan")->getResultArray(),
             'stres'     => $db->query("SELECT kategori_stres as kategori, COUNT(*) as total FROM hasil_tes GROUP BY kategori_stres")->getResultArray(),
         ];
 
-        // Data tes terbaru (5)
         $tesTerbaru = $db->query("
             SELECT ht.*, m.nama, m.universitas
             FROM hasil_tes ht
             JOIN mahasiswa m ON m.id = ht.mahasiswa_id
-            ORDER BY ht.created_at DESC
-            LIMIT 5
+            ORDER BY ht.created_at DESC LIMIT 5
         ")->getResultArray();
 
-        // Ancaman terbaru (5)
-        $threatsTerbaru = $secModel->orderBy('created_at', 'DESC')->findAll(5);
+        $threatsTerbaru = (new SecurityLogModel())->orderBy('created_at','DESC')->findAll(5);
 
         return view('admin/layout', [
-            'content'       => view('admin/dashboard', compact('stats','distribusi','tesTerbaru','threatsTerbaru')),
-            'title'         => 'Dashboard - Admin Mentality',
-            'activePage'    => 'dashboard',
+            'content'        => view('admin/dashboard', compact('stats','distribusi','tesTerbaru','threatsTerbaru')),
+            'title'          => 'Dashboard - Admin Mentality',
+            'activePage'     => 'dashboard',
         ]);
     }
 
-    // ── Data Responden ────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════
+    // DATA RESPONDEN
+    // ══════════════════════════════════════════════════════════
+
     public function mahasiswa(): string
     {
-        $mahasiswaModel = new MahasiswaModel();
-        $db = \Config\Database::connect();
-
+        $db      = \Config\Database::connect();
         $search  = $this->request->getGet('search') ?? '';
         $perPage = 15;
         $page    = (int)($this->request->getGet('page') ?? 1);
@@ -115,8 +111,8 @@ public function login(): string|\CodeIgniter\HTTP\ResponseInterface
                 ->groupEnd();
         }
 
-        $total      = $builder->countAllResults(false);
-        $responden  = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
+        $total     = $builder->countAllResults(false);
+        $responden = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
 
         return view('admin/layout', [
             'content'    => view('admin/responden', compact('responden','total','page','perPage','search')),
@@ -125,39 +121,37 @@ public function login(): string|\CodeIgniter\HTTP\ResponseInterface
         ]);
     }
 
-    // ── Detail Responden ──────────────────────────────────────
-   public function respondenDetail(int $id): string|\CodeIgniter\HTTP\ResponseInterface
-{
-    $db = \Config\Database::connect();
+    public function respondenDetail(int $id): string
+    {
+        $db        = \Config\Database::connect();
+        $responden = $db->table('mahasiswa')->where('id', $id)->get()->getRowArray();
 
-    $responden = $db->table('mahasiswa')->where('id', $id)->get()->getRowArray();
-    
-    // Bagian ini yang menyebabkan error jika tetap menggunakan : string
-    if (!$responden) {
-        return redirect()->to('/admin/mahasiswa')->with('error', 'Data tidak ditemukan.');
+        if (!$responden) {
+            return redirect()->to('/admin/mahasiswa')->with('error', 'Data tidak ditemukan.');
+        }
+
+        $riwayatTes = $db->table('hasil_tes')
+            ->where('mahasiswa_id', $id)
+            ->orderBy('created_at', 'DESC')
+            ->get()->getResultArray();
+
+        return view('admin/layout', [
+            'content'    => view('admin/responden_detail', compact('responden','riwayatTes')),
+            'title'      => 'Detail Responden - Admin Mentality',
+            'activePage' => 'responden',
+        ]);
     }
 
-    $riwayatTes = $db->table('hasil_tes')
-        ->where('mahasiswa_id', $id)
-        ->orderBy('created_at', 'DESC')
-        ->get()->getResultArray();
-
-    return view('admin/layout', [
-        'content'    => view('admin/responden_detail', compact('responden','riwayatTes')),
-        'title'      => 'Detail Responden - Admin Mentality',
-        'activePage' => 'responden',
-    ]);
-}
-
-    // ── Hapus Responden ───────────────────────────────────────
     public function respondenDelete(int $id): \CodeIgniter\HTTP\ResponseInterface
     {
-        $model = new MahasiswaModel();
-        $model->delete($id);
+        (new MahasiswaModel())->delete($id);
         return redirect()->to('/admin/mahasiswa')->with('success', 'Data responden berhasil dihapus.');
     }
 
-    // ── Hasil Tes ─────────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════
+    // HASIL TES
+    // ══════════════════════════════════════════════════════════
+
     public function hasilTes(): string
     {
         $db      = \Config\Database::connect();
@@ -186,8 +180,8 @@ public function login(): string|\CodeIgniter\HTTP\ResponseInterface
                 ->groupEnd();
         }
 
-        $total  = $builder->countAllResults(false);
-        $hasil  = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
+        $total = $builder->countAllResults(false);
+        $hasil = $builder->limit($perPage, ($page - 1) * $perPage)->get()->getResultArray();
 
         return view('admin/layout', [
             'content'    => view('admin/hasil_tes', compact('hasil','total','page','perPage','search','filter')),
@@ -196,7 +190,111 @@ public function login(): string|\CodeIgniter\HTTP\ResponseInterface
         ]);
     }
 
-    // ── Security Logs ─────────────────────────────────────────
+    // ══════════════════════════════════════════════════════════
+    // KELOLA FORM KUESIONER (CRUD Field)
+    // ══════════════════════════════════════════════════════════
+
+    public function formFields(): string
+    {
+        $fields = (new FormFieldModel())->getAll();
+
+        return view('admin/layout', [
+            'content'    => view('admin/form_fields', compact('fields')),
+            'title'      => 'Kelola Form Kuesioner - Admin Mentality',
+            'activePage' => 'form_fields',
+        ]);
+    }
+
+    public function formFieldsSave(): \CodeIgniter\HTTP\ResponseInterface
+    {
+        $model = new FormFieldModel();
+        $id    = $this->request->getPost('id');
+
+        $data = [
+            'label'       => $this->request->getPost('label'),
+            'name'        => strtolower(str_replace(' ', '_', $this->request->getPost('name'))),
+            'type'        => $this->request->getPost('type'),
+            'placeholder' => $this->request->getPost('placeholder'),
+            'required'    => $this->request->getPost('required') ? 1 : 0,
+            'aktif'       => $this->request->getPost('aktif') ? 1 : 0,
+            'urutan'      => (int)$this->request->getPost('urutan'),
+        ];
+
+        // Handle options untuk select/radio
+        $optionsRaw = $this->request->getPost('options');
+        if (!empty($optionsRaw)) {
+            $opts = array_filter(array_map('trim', explode("\n", $optionsRaw)));
+            $data['options'] = json_encode(array_values($opts));
+        } else {
+            $data['options'] = null;
+        }
+
+        // Validasi nama field tidak boleh duplikat saat tambah baru
+        if (!$id) {
+            $existing = $model->where('name', $data['name'])->first();
+            if ($existing) {
+                return redirect()->back()->withInput()
+                    ->with('error', 'Nama field "' . $data['name'] . '" sudah digunakan!');
+            }
+        }
+
+        if ($id) {
+            // Field default tidak boleh ubah nama & type
+            $existing = $model->find($id);
+            if ($existing && $model->isDefault($existing['name'])) {
+                unset($data['name'], $data['type']);
+            }
+            $model->update($id, $data);
+            $msg = 'Field berhasil diperbarui.';
+        } else {
+            $model->insert($data);
+            $msg = 'Field berhasil ditambahkan.';
+        }
+
+        return redirect()->to('/admin/form-fields')->with('success', $msg);
+    }
+
+    public function formFieldsDelete(int $id): \CodeIgniter\HTTP\ResponseInterface
+    {
+        $model = new FormFieldModel();
+        $field = $model->find($id);
+
+        if (!$field) {
+            return redirect()->to('/admin/form-fields')->with('error', 'Field tidak ditemukan.');
+        }
+
+        // Field default tidak boleh dihapus
+        if ($model->isDefault($field['name'])) {
+            return redirect()->to('/admin/form-fields')
+                ->with('error', 'Field "' . $field['label'] . '" adalah field wajib dan tidak dapat dihapus!');
+        }
+
+        $model->delete($id);
+        return redirect()->to('/admin/form-fields')->with('success', 'Field berhasil dihapus.');
+    }
+
+    public function formFieldsToggle(int $id): \CodeIgniter\HTTP\ResponseInterface
+    {
+        $model = new FormFieldModel();
+        $field = $model->find($id);
+
+        if (!$field) {
+            return $this->response->setJSON(['success' => false]);
+        }
+
+        $newStatus = $field['aktif'] ? 0 : 1;
+        $model->update($id, ['aktif' => $newStatus]);
+
+        return $this->response->setJSON([
+            'success' => true,
+            'aktif'   => $newStatus,
+        ]);
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // SECURITY LOGS
+    // ══════════════════════════════════════════════════════════
+
     public function securityLogs(): string
     {
         $model   = new SecurityLogModel();
@@ -214,11 +312,13 @@ public function login(): string|\CodeIgniter\HTTP\ResponseInterface
         ]);
     }
 
-    // ── Blog Management ───────────────────────────────────────
+    // ══════════════════════════════════════════════════════════
+    // KELOLA BLOG
+    // ══════════════════════════════════════════════════════════
+
     public function blogs(): string
     {
-        $model = new BlogModel();
-        $blogs = $model->orderBy('created_at','DESC')->findAll();
+        $blogs = (new BlogModel())->orderBy('created_at','DESC')->findAll();
 
         return view('admin/layout', [
             'content'    => view('admin/blogs', compact('blogs')),

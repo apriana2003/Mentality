@@ -1,11 +1,9 @@
 <?php
 // app/Config/Routes.php
-
 use CodeIgniter\Router\RouteCollection;
-
 /** @var RouteCollection $routes */
 
-// ── Public routes ────────────────────────────────────────────
+// ── Public ───────────────────────────────────────────────────
 $routes->get('/',                   'BerandaController::index');
 $routes->get('services',            'ServicesController::index');
 $routes->get('services/konseling',  'ChatbotController::index');
@@ -23,21 +21,34 @@ $routes->get('tes/hasil/(:num)',    'TesController::hasil/$1');
 $routes->get('blogs',               'BlogsController::index');
 $routes->get('blogs/(:segment)',    'BlogsController::detail/$1');
 
-// ── Admin login (di luar group, tidak perlu filter) ───────────
+// ── Admin login ───────────────────────────────────────────────
 $routes->get('admin/login',         'AdminController::login');
 $routes->post('admin/login',        'AdminController::doLogin');
 $routes->get('admin/logout',        'AdminController::logout');
 
-// ── Admin routes (semua butuh login) ─────────────────────────
-// PENTING: di dalam group() JANGAN pakai slash di depan!
+// ── Admin (butuh login) ───────────────────────────────────────
 $routes->group('admin', ['filter' => 'adminAuth'], function($routes) {
-    $routes->get('',                        'AdminController::dashboard');
-    $routes->get('mahasiswa',               'AdminController::mahasiswa');
-    $routes->get('mahasiswa/(:num)',        'AdminController::respondenDetail/$1');
-    $routes->get('mahasiswa/delete/(:num)', 'AdminController::respondenDelete/$1');
-    $routes->get('hasil-tes',               'AdminController::hasilTes');
-    $routes->get('security-logs',           'AdminController::securityLogs');
-    $routes->get('blogs',                   'AdminController::blogs');
-    $routes->post('blogs/save',             'AdminController::blogsSave');
-    $routes->get('blogs/delete/(:num)',     'AdminController::blogsDelete/$1');
+    $routes->get('',                              'AdminController::dashboard');
+
+    // Responden
+    $routes->get('mahasiswa',                     'AdminController::mahasiswa');
+    $routes->get('mahasiswa/(:num)',              'AdminController::respondenDetail/$1');
+    $routes->get('mahasiswa/delete/(:num)',       'AdminController::respondenDelete/$1');
+
+    // Hasil tes
+    $routes->get('hasil-tes',                     'AdminController::hasilTes');
+
+    // Form Kuesioner CRUD
+    $routes->get('form-fields',                   'AdminController::formFields');
+    $routes->post('form-fields/save',             'AdminController::formFieldsSave');
+    $routes->get('form-fields/delete/(:num)',     'AdminController::formFieldsDelete/$1');
+    $routes->post('form-fields/toggle/(:num)',    'AdminController::formFieldsToggle/$1');
+
+    // Blog
+    $routes->get('blogs',                         'AdminController::blogs');
+    $routes->post('blogs/save',                   'AdminController::blogsSave');
+    $routes->get('blogs/delete/(:num)',           'AdminController::blogsDelete/$1');
+
+    // Security
+    $routes->get('security-logs',                 'AdminController::securityLogs');
 });
