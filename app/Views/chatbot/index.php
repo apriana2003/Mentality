@@ -81,10 +81,10 @@ main { height: calc(100vh - 72px); }
 
   <!-- Input area -->
   <div class="chat-input-area">
-    <div class="chat-input-wrap">
+    <div class="chat-input-wrap ">
       <textarea
         id="chatInput"
-        class="chat-input"
+        class="chat-input overflow-y-hidden"
         placeholder="Ketik pesanmu di sini... (Enter = kirim, Shift+Enter = baris baru)"
         rows="1"
       ></textarea>
