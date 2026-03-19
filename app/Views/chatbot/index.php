@@ -1,10 +1,5 @@
 <?php $hasilTes = $hasilTes ?? null; ?>
 
-<!-- BASE_URL harus didefinisikan SEBELUM mentality.js diload -->
-<script>
-  const BASE_URL = '<?= base_url() ?>';
-</script>
-
 <style>
 body { overflow: hidden; }
 main { height: calc(100vh - 72px); }
