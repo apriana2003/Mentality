@@ -36,7 +36,9 @@ $threatsTerbaru = $threatsTerbaru ?? [];
         <h6><i class="bi bi-bar-chart-fill me-2 text-green-main"></i>Distribusi Hasil DASS-21</h6>
       </div>
       <div class="p-4">
-        <canvas id="chartDASS" height="100"></canvas>
+        <div style="position: relative; height: 300px;"> 
+          <canvas id="chartDASS"></canvas>
+        </div>
       </div>
     </div>
   </div>
