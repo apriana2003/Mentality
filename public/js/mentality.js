@@ -1,13 +1,18 @@
 /* ============================================================
    MENTALITY - Main JavaScript
-   Fitur: localStorage persistence untuk sesi mahasiswa
+   Fitur:
+   - localStorage persistence sesi mahasiswa
+   - Auto-save form data diri saat mengetik
+   - Banner reminder tes belum selesai
    ============================================================ */
 
 // ── Key constants untuk localStorage ─────────────────────────
 const LS_KEY = {
-  mahasiswa : 'mentality_mahasiswa',
-  hasilTes  : 'mentality_hasil_tes',
-  chatToken : 'mentality_chat_token',
+  mahasiswa   : 'mentality_mahasiswa',
+  hasilTes    : 'mentality_hasil_tes',
+  chatToken   : 'mentality_chat_token',
+  formDraft   : 'mentality_form_draft',   // Draft form data diri
+  tesBelumSelesai : 'mentality_tes_pending', // Flag tes belum selesai
 };
 
 // ── Helper: simpan & ambil dari localStorage ─────────────────
@@ -84,8 +89,10 @@ document.addEventListener('DOMContentLoaded', function () {
   }, { threshold: 0.15 });
   fadeEls.forEach(el => fadeObs.observe(el));
 
-  // ── Cek localStorage & tampilkan banner "lanjut sesi" ────
+  // ── Inisialisasi fitur halaman ────────────────────────────
   SesiManager.checkAndShowBanner();
+  FormAutoSave.init();
+  ReminderBanner.init();
 
 });
 
@@ -94,51 +101,54 @@ document.addEventListener('DOMContentLoaded', function () {
 ============================================================ */
 const SesiManager = {
 
-  // Simpan data setelah tes selesai
+  // Dipanggil setelah tes selesai (dari view hasil/index.php)
   saveAfterTes(mahasiswaId, nama, hasilTesId, depresi, kecemasan, stres, kdep, kkec, kstr) {
-    LocalData.save(LS_KEY.mahasiswa, {
-      id   : mahasiswaId,
-      nama : nama,
-    });
+    LocalData.save(LS_KEY.mahasiswa, { id: mahasiswaId, nama });
     LocalData.save(LS_KEY.hasilTes, {
-      id                  : hasilTesId,
-      skor_depresi        : depresi,
-      skor_kecemasan      : kecemasan,
-      skor_stres          : stres,
-      kategori_depresi    : kdep,
-      kategori_kecemasan  : kkec,
-      kategori_stres      : kstr,
+      id                 : hasilTesId,
+      skor_depresi       : depresi,
+      skor_kecemasan     : kecemasan,
+      skor_stres         : stres,
+      kategori_depresi   : kdep,
+      kategori_kecemasan : kkec,
+      kategori_stres     : kstr,
     });
-    // Hapus token chat lama supaya sesi baru dibuat
+    // Hapus draft & flag pending karena tes sudah selesai
+    LocalData.remove(LS_KEY.formDraft);
+    LocalData.remove(LS_KEY.tesBelumSelesai);
     LocalData.remove(LS_KEY.chatToken);
   },
 
-  // Simpan chat token
-  saveChatToken(token) {
-    LocalData.save(LS_KEY.chatToken, token);
+  // Dipanggil setelah submit form data diri (dari view form/index.php)
+  saveAfterFormSubmit(nama, email) {
+    LocalData.save(LS_KEY.tesBelumSelesai, {
+      nama,
+      email,
+      savedAt : new Date().toISOString(),
+    });
+    // Hapus draft karena sudah submit
+    LocalData.remove(LS_KEY.formDraft);
   },
 
-  getChatToken() {
-    return LocalData.get(LS_KEY.chatToken);
-  },
-
-  getMahasiswa() {
-    return LocalData.get(LS_KEY.mahasiswa);
-  },
-
-  getHasilTes() {
-    return LocalData.get(LS_KEY.hasilTes);
-  },
+  saveChatToken(token)  { LocalData.save(LS_KEY.chatToken, token); },
+  getChatToken()        { return LocalData.get(LS_KEY.chatToken); },
+  getMahasiswa()        { return LocalData.get(LS_KEY.mahasiswa); },
+  getHasilTes()         { return LocalData.get(LS_KEY.hasilTes); },
+  getFormDraft()        { return LocalData.get(LS_KEY.formDraft); },
+  getTesPending()       { return LocalData.get(LS_KEY.tesBelumSelesai); },
 
   hasSesi() {
     return !!(LocalData.get(LS_KEY.mahasiswa) && LocalData.get(LS_KEY.hasilTes));
   },
 
-  clearSesi() {
-    LocalData.clear();
+  clearSesi() { LocalData.clear(); },
+
+  clearSesiAndReload() {
+    this.clearSesi();
+    window.location.reload();
   },
 
-  // Tampilkan banner "Lanjut sesi sebelumnya" di halaman form
+  // ── Banner sesi sebelumnya (tes sudah selesai) ────────────
   checkAndShowBanner() {
     const formPage = document.getElementById('formDiri');
     if (!formPage) return;
@@ -148,35 +158,221 @@ const SesiManager = {
     const hasil     = this.getHasilTes();
     if (!mahasiswa || !hasil) return;
 
-    // Buat banner
     const banner = document.createElement('div');
-    banner.className = 'alert rounded-3 mb-4 d-flex align-items-center gap-3';
+    banner.className = 'alert rounded-3 mb-4 d-flex align-items-center gap-3 flex-wrap';
     banner.style.cssText = 'background:#e8f5ee;border:1.5px solid #1a6b3c;color:#0f4c2a';
     banner.innerHTML = `
-      <i class="bi bi-person-check-fill fs-4 flex-shrink-0"></i>
+      <i class="bi bi-person-check-fill fs-4 flex-shrink-0" style="color:#1a6b3c"></i>
       <div class="flex-grow-1">
         <div class="fw-bold" style="font-size:.9rem">Hei, ${escapeHtml(mahasiswa.nama)}! Kamu punya sesi sebelumnya 👋</div>
-        <div style="font-size:.8rem;opacity:.8">Hasil tes: Depresi <b>${escapeHtml(hasil.kategori_depresi)}</b> · Kecemasan <b>${escapeHtml(hasil.kategori_kecemasan)}</b> · Stres <b>${escapeHtml(hasil.kategori_stres)}</b></div>
+        <div style="font-size:.8rem;opacity:.8;margin-top:.2rem">
+          Hasil tes: Depresi <b>${escapeHtml(hasil.kategori_depresi)}</b>
+          · Kecemasan <b>${escapeHtml(hasil.kategori_kecemasan)}</b>
+          · Stres <b>${escapeHtml(hasil.kategori_stres)}</b>
+        </div>
       </div>
       <div class="d-flex gap-2 flex-shrink-0">
         <a href="${BASE_URL}services/konseling" class="btn btn-sm btn-primary-custom rounded-pill px-3">
           <i class="bi bi-robot me-1"></i>Lanjut Chat
         </a>
-        <button onclick="SesiManager.clearSesiAndReload()" class="btn btn-sm rounded-pill px-3"
+        <button onclick="SesiManager.clearSesiAndReload()"
+          class="btn btn-sm rounded-pill px-3"
           style="background:white;border:1px solid #1a6b3c;color:#1a6b3c;font-size:.8rem">
           Mulai Baru
         </button>
       </div>
     `;
-
-    // Sisipkan di atas form
     formPage.parentNode.insertBefore(banner, formPage);
   },
+};
 
-  clearSesiAndReload() {
-    this.clearSesi();
+/* ============================================================
+   FORM AUTO-SAVE — simpan draft form data diri ke localStorage
+============================================================ */
+const FormAutoSave = {
+  saveTimer: null,
+
+  init() {
+    const form = document.getElementById('formDiri');
+    if (!form) return;
+
+    // Restore draft jika ada
+    this.restoreDraft(form);
+
+    // Auto-save saat ada perubahan input (debounce 800ms)
+    form.addEventListener('input', () => {
+      clearTimeout(this.saveTimer);
+      this.saveTimer = setTimeout(() => this.saveDraft(form), 800);
+    });
+
+    form.addEventListener('change', () => {
+      clearTimeout(this.saveTimer);
+      this.saveTimer = setTimeout(() => this.saveDraft(form), 800);
+    });
+
+    // Tampilkan indikator auto-save
+    this.createIndicator(form);
+  },
+
+  saveDraft(form) {
+    const draft = {};
+    const inputs = form.querySelectorAll('input:not([type="hidden"]):not([type="submit"]), select, textarea');
+
+    inputs.forEach(input => {
+      if (!input.name) return;
+      if (input.type === 'radio') {
+        if (input.checked) draft[input.name] = input.value;
+      } else {
+        draft[input.name] = input.value;
+      }
+    });
+
+    // Hanya simpan jika ada isian
+    const hasData = Object.values(draft).some(v => v && v.trim?.() !== '');
+    if (!hasData) return;
+
+    draft._savedAt = new Date().toISOString();
+    LocalData.save(LS_KEY.formDraft, draft);
+    this.showSavedIndicator();
+  },
+
+  restoreDraft(form) {
+    // Jangan restore kalau sudah punya sesi selesai
+    if (SesiManager.hasSesi()) return;
+
+    const draft = LocalData.get(LS_KEY.formDraft);
+    if (!draft) return;
+
+    const inputs = form.querySelectorAll('input:not([type="hidden"]):not([type="submit"]), select, textarea');
+    let restored = false;
+
+    inputs.forEach(input => {
+      if (!input.name || !(input.name in draft)) return;
+      const val = draft[input.name];
+      if (!val) return;
+
+      if (input.type === 'radio') {
+        if (input.value === val) {
+          input.checked = true;
+          // Trigger style update untuk radio custom
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      } else {
+        input.value = val;
+      }
+      restored = true;
+    });
+
+    if (restored) {
+      // Tampilkan notif draft dipulihkan
+      const notice = document.createElement('div');
+      notice.className = 'alert rounded-3 mb-3 d-flex align-items-center gap-2';
+      notice.style.cssText = 'background:#eff6ff;border:1px solid #93c5fd;color:#1d4ed8;font-size:.83rem';
+      notice.innerHTML = `
+        <i class="bi bi-floppy-fill flex-shrink-0"></i>
+        <span>Draft tersimpan dipulihkan — lanjutkan mengisi form kamu.</span>
+        <button onclick="FormAutoSave.clearDraftAndReload()"
+          class="btn btn-sm ms-auto rounded-pill"
+          style="background:white;border:1px solid #93c5fd;color:#1d4ed8;font-size:.75rem;white-space:nowrap">
+          Hapus Draft
+        </button>
+      `;
+      form.parentNode.insertBefore(notice, form);
+    }
+  },
+
+  createIndicator(form) {
+    const indicator = document.createElement('div');
+    indicator.id = 'autoSaveIndicator';
+    indicator.style.cssText = 'font-size:.72rem;color:#64748b;text-align:right;margin-bottom:.5rem;display:none';
+    indicator.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i>Draft tersimpan otomatis';
+    form.parentNode.insertBefore(indicator, form);
+  },
+
+  showSavedIndicator() {
+    const el = document.getElementById('autoSaveIndicator');
+    if (!el) return;
+    el.style.display = 'block';
+    clearTimeout(this._hideTimer);
+    this._hideTimer = setTimeout(() => { el.style.display = 'none'; }, 3000);
+  },
+
+  clearDraftAndReload() {
+    LocalData.remove(LS_KEY.formDraft);
     window.location.reload();
-  }
+  },
+};
+
+/* ============================================================
+   REMINDER BANNER — pengingat tes belum selesai
+   Tampil di halaman BERANDA & TES jika mahasiswa sudah isi
+   form tapi belum selesaikan tes
+============================================================ */
+const ReminderBanner = {
+  init() {
+    const pending = SesiManager.getTesPending();
+    if (!pending) return;
+
+    // Jangan tampil kalau sesi tes sudah selesai
+    if (SesiManager.hasSesi()) {
+      LocalData.remove(LS_KEY.tesBelumSelesai);
+      return;
+    }
+
+    // Hitung berapa lama sejak daftar
+    const savedAt  = new Date(pending.savedAt);
+    const diffMin  = Math.round((Date.now() - savedAt) / 60000);
+    const timeAgo  = diffMin < 60
+      ? `${diffMin} menit lalu`
+      : `${Math.round(diffMin/60)} jam lalu`;
+
+    // Tampilkan di beranda (sebelum hero CTA) atau di bagian atas halaman tes
+    const targets = [
+      document.querySelector('.hero-section'),   // beranda
+      document.querySelector('.form-section'),    // form
+      document.getElementById('tesForm'),         // tes
+    ].filter(Boolean);
+
+    if (targets.length === 0) return;
+
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#fef9c3;border-bottom:2px solid #fbbf24;padding:.75rem 0';
+    banner.innerHTML = `
+      <div class="container">
+        <div class="d-flex align-items-center gap-3 flex-wrap justify-content-between">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-clock-history" style="color:#d97706;font-size:1.1rem"></i>
+            <div>
+              <span style="font-size:.85rem;font-weight:700;color:#92400e">
+                Hei, ${escapeHtml(pending.nama)}! Kamu belum menyelesaikan tes mental.
+              </span>
+              <span style="font-size:.78rem;color:#b45309;margin-left:.5rem">Dimulai ${timeAgo}</span>
+            </div>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="${BASE_URL}tes" class="btn btn-sm rounded-pill fw-bold"
+              style="background:#fbbf24;color:#1c1917;border:none;font-size:.78rem">
+              <i class="bi bi-play-fill me-1"></i>Lanjut Tes
+            </a>
+            <button onclick="ReminderBanner.dismiss()"
+              class="btn btn-sm rounded-pill"
+              style="background:transparent;border:1px solid #d97706;color:#92400e;font-size:.78rem">
+              Nanti Saja
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Sisipkan sebelum elemen target pertama
+    const target = targets[0];
+    target.parentNode.insertBefore(banner, target);
+  },
+
+  dismiss() {
+    LocalData.remove(LS_KEY.tesBelumSelesai);
+    window.location.reload();
+  },
 };
 
 function escapeHtml(str) {
@@ -201,20 +397,16 @@ const Chatbot = {
     this._initialized = true;
 
     try {
-      // Kirim chat_token dari localStorage ke server via header custom
       const savedToken = SesiManager.getChatToken();
-      const headers = { 'X-Requested-With': 'XMLHttpRequest' };
+      const headers    = { 'X-Requested-With': 'XMLHttpRequest' };
       if (savedToken) headers['X-Chat-Token'] = savedToken;
 
       const res  = await fetch(BASE_URL + 'chatbot/session', { headers });
       const data = await res.json();
 
       this.sessionToken = data.token;
-
-      // Simpan token baru ke localStorage
       if (data.token) SesiManager.saveChatToken(data.token);
 
-      // Render riwayat pesan
       const msgs = data.messages || [];
       if (msgs.length === 0) {
         const mahasiswa = SesiManager.getMahasiswa();
@@ -224,7 +416,6 @@ const Chatbot = {
         this.appendMessage('ai', sapa);
       } else {
         msgs.forEach(m => this.appendMessage(m.role === 'user' ? 'user' : 'ai', m.content, false));
-        // Scroll ke bawah
         container.scrollTop = container.scrollHeight;
       }
     } catch (err) {
@@ -232,12 +423,11 @@ const Chatbot = {
       this.appendMessage('ai', 'Aduh, ada gangguan koneksi nih. Coba refresh halaman ya!');
     }
 
-    // Event listeners
     const input   = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendBtn');
     if (!input || !sendBtn) return;
 
-    sendBtn.addEventListener('click', () => this.send());
+    sendBtn.addEventListener('click',  () => this.send());
     input.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.send(); }
     });
@@ -302,9 +492,7 @@ const Chatbot = {
     container.scrollTop = container.scrollHeight;
   },
 
-  hideTyping() {
-    document.getElementById('typingIndicator')?.remove();
-  },
+  hideTyping() { document.getElementById('typingIndicator')?.remove(); },
 
   formatText(text) {
     return String(text)
@@ -322,14 +510,14 @@ const TesForm = {
     const form = document.getElementById('tesForm');
     if (!form) return;
 
-    const total   = 21;
+    const total   = form.querySelectorAll('.question-card').length;
     const bar     = document.getElementById('tesProgressFill');
     const counter = document.getElementById('tesProgressCount');
 
     form.addEventListener('change', () => {
       const answered = form.querySelectorAll('input[type="radio"]:checked').length;
       const pct = Math.round((answered / total) * 100);
-      if (bar)     bar.style.width   = pct + '%';
+      if (bar)     bar.style.width    = pct + '%';
       if (counter) counter.textContent = answered + '/' + total;
     });
 
@@ -337,10 +525,16 @@ const TesForm = {
       const answered = form.querySelectorAll('input[type="radio"]:checked').length;
       if (answered < total) {
         e.preventDefault();
-        const unanswered = form.querySelector('.question-card:not(:has(input:checked))');
-        unanswered?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        unanswered?.classList.add('border-danger');
-        setTimeout(() => unanswered?.classList.remove('border-danger'), 2000);
+        const cards = form.querySelectorAll('.question-card');
+        let firstUnanswered = null;
+        cards.forEach(card => {
+          if (!card.querySelector('input:checked') && !firstUnanswered) {
+            firstUnanswered = card;
+          }
+        });
+        firstUnanswered?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstUnanswered?.classList.add('border-danger');
+        setTimeout(() => firstUnanswered?.classList.remove('border-danger'), 2000);
         showToast('Harap jawab semua ' + total + ' pertanyaan terlebih dahulu.', 'danger');
       }
     });

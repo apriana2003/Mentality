@@ -160,3 +160,14 @@ $fields = $fields ?? [];
 }
 .radio-custom + label:hover { border-color: var(--green-main) !important; }
 </style>
+
+<!-- Auto-save draft saat form diisi & simpan flag pending setelah submit -->
+<script>
+// Dipanggil dari FormController via flash data setelah redirect ke /tes
+<?php if (session()->getFlashdata('save_pending')): ?>
+const _pending = <?= json_encode(session()->getFlashdata('save_pending')) ?>;
+if (_pending) {
+  SesiManager.saveAfterFormSubmit(_pending.nama, _pending.email);
+}
+<?php endif; ?>
+</script>

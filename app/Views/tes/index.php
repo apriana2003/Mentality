@@ -118,3 +118,13 @@ const obs = new IntersectionObserver(entries => {
 }, { threshold: 0.1 });
 cards.forEach(c => obs.observe(c));
 </script>
+
+<!-- Simpan flag tes pending ke localStorage -->
+<script>
+<?php if (session()->getFlashdata('save_pending')): ?>
+const _p = <?= json_encode(session()->getFlashdata('save_pending')) ?>;
+if (typeof SesiManager !== 'undefined' && _p) {
+  SesiManager.saveAfterFormSubmit(_p.nama, _p.email);
+}
+<?php endif; ?>
+</script>

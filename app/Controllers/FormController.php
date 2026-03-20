@@ -19,12 +19,10 @@ class FormController extends BaseController
 
     public function submit(): \CodeIgniter\HTTP\ResponseInterface
     {
-        $fields = (new FormFieldModel())->getAktif();
-        $data   = [];
-        $errors = [];
-
-        // Field yang tersimpan di tabel mahasiswa
-        $mahasiswaFields = ['nama', 'email', 'nim', 'universitas', 'jenis_kelamin', 'usia'];
+        $fields          = (new FormFieldModel())->getAktif();
+        $data            = [];
+        $errors          = [];
+        $mahasiswaFields = ['nama','email','nim','universitas','jenis_kelamin','usia'];
 
         foreach ($fields as $field) {
             $name  = $field['name'];
@@ -46,38 +44,61 @@ class FormController extends BaseController
                 $value = (int) $value;
             }
 
-            // Handle radio jenis_kelamin — simpan L/P
+            // Handle radio jenis_kelamin
             if ($name === 'jenis_kelamin') {
                 $value = ($value === 'Laki-laki' || $value === 'L') ? 'L' : 'P';
             }
 
-            // Hanya simpan field yang ada di tabel mahasiswa
             if (in_array($name, $mahasiswaFields)) {
                 $data[$name] = $value;
             }
         }
 
-        // Kembalikan error validasi manual
         if (!empty($errors)) {
             return redirect()->back()->withInput()->with('errors', $errors);
         }
 
-        // Validasi via Model CI4
         $model = new MahasiswaModel();
+
         if (!$model->validate($data)) {
             return redirect()->back()->withInput()->with('errors', $model->errors());
         }
 
-        // Simpan
-        $id = $model->insert($data);
+        // ── Cek apakah email sudah pernah daftar ─────────────────
+        $existing = $model->where('email', $data['email'])->first();
 
-        if (!$id) {
-            return redirect()->back()->withInput()
-                ->with('errors', ['general' => 'Gagal menyimpan data. Silakan coba lagi.']);
+        if ($existing) {
+            // Email sudah ada — gunakan ID yang lama, tidak insert baru
+            $id = $existing['id'];
+
+            // Update data jika ada perubahan (nama, universitas, dll)
+            $model->update($id, [
+                'nama'          => $data['nama'],
+                'nim'           => $data['nim']          ?? $existing['nim'],
+                'universitas'   => $data['universitas']  ?? $existing['universitas'],
+                'jenis_kelamin' => $data['jenis_kelamin'],
+                'usia'          => $data['usia'],
+            ]);
+
+        } else {
+            // Email baru — insert data
+            $id = $model->insert($data);
+
+            if (!$id) {
+                return redirect()->back()->withInput()
+                    ->with('errors', ['general' => 'Gagal menyimpan data. Silakan coba lagi.']);
+            }
         }
 
+        // Simpan ke session
         session()->set('mahasiswa_id', $id);
         session()->set('mahasiswa_nama', $data['nama'] ?? '');
+
+        // Kirim data untuk localStorage pending flag
+        session()->setFlashdata('save_pending', [
+            'nama'  => $data['nama']  ?? '',
+            'email' => $data['email'] ?? '',
+        ]);
 
         return redirect()->to('/tes')->with('success', 'Data berhasil disimpan. Mulai tes sekarang!');
     }
