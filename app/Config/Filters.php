@@ -19,6 +19,7 @@ class Filters extends BaseConfig
     public array $globals = [
         'before' => [
             'honeypot',
+            'security',
         ],
         'after' => [
             'toolbar',
