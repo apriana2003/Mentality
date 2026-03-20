@@ -50,8 +50,10 @@ $routes->group('admin', ['filter' => 'adminAuth'], function($routes) {
     $routes->get('form-fields/delete/(:num)',       'AdminController::formFieldsDelete/$1');
     $routes->post('form-fields/toggle/(:num)',      'AdminController::formFieldsToggle/$1');
 
-    // Blog
+    // Blog (dengan halaman form terpisah untuk upload gambar)
     $routes->get('blogs',                           'AdminController::blogs');
+    $routes->get('blogs/create',                    'AdminController::blogsCreate');
+    $routes->get('blogs/edit/(:num)',               'AdminController::blogsEdit/$1');
     $routes->post('blogs/save',                     'AdminController::blogsSave');
     $routes->get('blogs/delete/(:num)',             'AdminController::blogsDelete/$1');
 

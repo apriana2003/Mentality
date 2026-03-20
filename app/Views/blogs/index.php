@@ -1,6 +1,5 @@
-<?php $blogs = $blogs ?? []; $page = $page ?? 1; $total = $total ?? 0; $limit = $limit ?? 6; ?>
+<?php $blogs=$blogs??[]; $page=$page??1; $total=$total??0; $limit=$limit??6; ?>
 
-<!-- HEADER -->
 <section class="section-pad-sm" style="background:linear-gradient(135deg,var(--green-dark),var(--green-main))">
   <div class="container text-center py-4">
     <div class="section-badge" style="background:rgba(255,255,255,.15);color:white"><i class="bi bi-newspaper"></i> Blog</div>
@@ -9,13 +8,11 @@
   </div>
 </section>
 
-<!-- ARTIKEL -->
 <section class="section-pad" style="background:var(--gray-50)">
   <div class="container">
     <?php if (empty($blogs)): ?>
-    <div class="text-center py-5">
-      <i class="bi bi-journal-x text-muted" style="font-size:3rem"></i>
-      <p class="text-muted mt-3">Belum ada artikel yang dipublikasikan.</p>
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-journal-x fs-3 d-block mb-2"></i>Belum ada artikel.
     </div>
     <?php else: ?>
     <div class="row g-4">
@@ -25,7 +22,21 @@
       <div class="col-lg-4 col-md-6">
         <a href="<?= base_url('blogs/' . esc($blog['slug'])) ?>" class="text-decoration-none">
           <div class="blog-card">
-            <div class="blog-img"><i class="bi <?= $icons[$blog['kategori']] ?? 'bi-journal-text' ?>"></i></div>
+            <!-- Gambar atau ikon default -->
+            <?php if ($blog['gambar'] && file_exists(FCPATH . 'uploads/blogs/' . $blog['gambar'])): ?>
+            <div style="height:180px;overflow:hidden">
+              <img src="<?= base_url('uploads/blogs/' . esc($blog['gambar'])) ?>"
+                alt="<?= esc($blog['judul']) ?>"
+                style="width:100%;height:100%;object-fit:cover;transition:transform .3s ease"
+                onmouseover="this.style.transform='scale(1.05)'"
+                onmouseout="this.style.transform='scale(1)'">
+            </div>
+            <?php else: ?>
+            <div class="blog-img">
+              <i class="bi <?= $icons[$blog['kategori']] ?? 'bi-journal-text' ?>"></i>
+            </div>
+            <?php endif; ?>
+
             <div class="blog-body">
               <span class="blog-category"><?= esc($blog['kategori']) ?></span>
               <h5 class="blog-title text-dark"><?= esc($blog['judul']) ?></h5>
@@ -41,11 +52,11 @@
       <?php endforeach; ?>
     </div>
 
-    <!-- Pagination -->
     <?php if ($total > $limit): $pages = ceil($total / $limit); ?>
     <div class="d-flex justify-content-center mt-5 gap-2">
-      <?php for($i = 1; $i <= $pages; $i++): ?>
-      <a href="?page=<?= $i ?>" class="btn btn-sm <?= $i == $page ? 'btn-primary-custom' : 'btn-outline-green' ?> rounded-circle" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;padding:0"><?= $i ?></a>
+      <?php for($i=1;$i<=$pages;$i++): ?>
+      <a href="?page=<?=$i?>" class="btn btn-sm <?=$i==$page?'btn-primary-custom':'btn-outline-green'?> rounded-circle"
+        style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;padding:0"><?=$i?></a>
       <?php endfor; ?>
     </div>
     <?php endif; ?>

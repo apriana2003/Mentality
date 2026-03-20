@@ -172,10 +172,8 @@ class AdminController extends BaseController
         $id    = $this->request->getPost('id');
         $nomor = (int)$this->request->getPost('nomor');
 
-        // Cek duplikat nomor
         if ($model->nomorExists($nomor, $id ? (int)$id : null)) {
-            return redirect()->back()->withInput()
-                ->with('error', "Nomor soal {$nomor} sudah digunakan pertanyaan lain!");
+            return redirect()->back()->withInput()->with('error', "Nomor soal {$nomor} sudah digunakan!");
         }
 
         $data = [
@@ -204,19 +202,15 @@ class AdminController extends BaseController
     {
         $model = new PertanyaanDassModel();
         $p     = $model->find($id);
-
         if (!$p) return redirect()->to('/admin/pertanyaan-dass')->with('error','Pertanyaan tidak ditemukan.');
 
-        // Minimal harus ada 7 pertanyaan aktif (DASS-21 minimum)
         $totalAktif = $model->where('aktif',1)->countAllResults();
         if ($p['aktif'] && $totalAktif <= 7) {
-            return redirect()->to('/admin/pertanyaan-dass')
-                ->with('error','Minimal harus ada 7 pertanyaan aktif!');
+            return redirect()->to('/admin/pertanyaan-dass')->with('error','Minimal harus ada 7 pertanyaan aktif!');
         }
 
         $model->delete($id);
-        return redirect()->to('/admin/pertanyaan-dass')
-            ->with('success', "Pertanyaan no.{$p['nomor']} berhasil dihapus.");
+        return redirect()->to('/admin/pertanyaan-dass')->with('success', "Pertanyaan no.{$p['nomor']} berhasil dihapus.");
     }
 
     public function pertanyaanDassToggle(int $id): \CodeIgniter\HTTP\ResponseInterface
@@ -225,7 +219,6 @@ class AdminController extends BaseController
         $p     = $model->find($id);
         if (!$p) return $this->response->setJSON(['success'=>false,'message'=>'Tidak ditemukan.']);
 
-        // Cegah nonaktifkan jika tinggal 7 aktif
         if ($p['aktif']) {
             $totalAktif = $model->where('aktif',1)->countAllResults();
             if ($totalAktif <= 7) {
@@ -233,10 +226,8 @@ class AdminController extends BaseController
             }
         }
 
-        $newStatus = $p['aktif'] ? 0 : 1;
-        $model->update($id, ['aktif' => $newStatus]);
-
-        return $this->response->setJSON(['success'=>true,'aktif'=>$newStatus]);
+        $model->update($id, ['aktif' => $p['aktif'] ? 0 : 1]);
+        return $this->response->setJSON(['success'=>true,'aktif'=> $p['aktif'] ? 0 : 1]);
     }
 
     // ══════════════════════════════════════════════════════════
@@ -246,7 +237,6 @@ class AdminController extends BaseController
     public function formFields(): string
     {
         $fields = (new FormFieldModel())->getAll();
-
         return view('admin/layout', [
             'content'    => view('admin/form_fields', compact('fields')),
             'title'      => 'Kelola Form Kuesioner - Admin Mentality',
@@ -311,7 +301,7 @@ class AdminController extends BaseController
         $field = $model->find($id);
         if (!$field) return $this->response->setJSON(['success'=>false]);
         $model->update($id, ['aktif' => $field['aktif'] ? 0 : 1]);
-        return $this->response->setJSON(['success'=>true,'aktif'=>$field['aktif'] ? 0 : 1]);
+        return $this->response->setJSON(['success'=>true,'aktif'=> $field['aktif'] ? 0 : 1]);
     }
 
     // ══════════════════════════════════════════════════════════
@@ -335,7 +325,7 @@ class AdminController extends BaseController
     }
 
     // ══════════════════════════════════════════════════════════
-    // KELOLA BLOG
+    // KELOLA BLOG (dengan upload gambar)
     // ══════════════════════════════════════════════════════════
 
     public function blogs(): string
@@ -348,12 +338,33 @@ class AdminController extends BaseController
         ]);
     }
 
+    public function blogsCreate(): string
+    {
+        return view("admin/layout", [
+            "content"    => view("admin/blog_form", ["blog" => null]),
+            "title"      => "Tambah Artikel - Admin Mentality",
+            "activePage" => "blogs",
+        ]);
+    }
+
+    public function blogsEdit(int $id): string
+    {
+        $blog = (new BlogModel())->find($id);
+        if (!$blog) return redirect()->to("/admin/blogs")->with("error","Artikel tidak ditemukan.");
+        return view("admin/layout", [
+            "content"    => view("admin/blog_form", compact("blog")),
+            "title"      => "Edit Artikel - Admin Mentality",
+            "activePage" => "blogs",
+        ]);
+    }
+
     public function blogsSave(): \CodeIgniter\HTTP\ResponseInterface
     {
         $model = new BlogModel();
         $id    = $this->request->getPost('id');
         $judul = $this->request->getPost('judul');
-        $data  = [
+
+        $data = [
             'judul'     => $judul,
             'slug'      => $id ? $model->find($id)['slug'] : $model->generateSlug($judul),
             'ringkasan' => $this->request->getPost('ringkasan'),
@@ -361,13 +372,81 @@ class AdminController extends BaseController
             'kategori'  => $this->request->getPost('kategori'),
             'published' => $this->request->getPost('published') ? 1 : 0,
         ];
-        $id ? $model->update($id, $data) : $model->insert($data);
-        return redirect()->to('/admin/blogs')->with('success', $id ? 'Artikel diperbarui.' : 'Artikel ditambahkan.');
+
+        // ── Handle upload gambar ──────────────────────────────
+        $file = $this->request->getFile('gambar');
+
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            // Validasi tipe & ukuran
+            $allowedTypes = ['image/jpeg','image/jpg','image/png','image/webp'];
+            $maxSize      = 2048; // 2MB dalam KB
+
+            if (!in_array($file->getMimeType(), $allowedTypes)) {
+                return redirect()->back()->withInput()
+                    ->with('error', 'Format gambar tidak didukung. Gunakan JPG, PNG, atau WebP.');
+            }
+
+            if ($file->getSizeByUnit('kb') > $maxSize) {
+                return redirect()->back()->withInput()
+                    ->with('error', 'Ukuran gambar maksimal 2MB.');
+            }
+
+            // Generate nama file unik
+            $newName = 'blog_' . time() . '_' . uniqid() . '.' . $file->getExtension();
+            $uploadPath = FCPATH . 'uploads/blogs/';
+
+            // Buat folder jika belum ada
+            if (!is_dir($uploadPath)) {
+                mkdir($uploadPath, 0755, true);
+            }
+
+            $file->move($uploadPath, $newName);
+
+            // Hapus gambar lama jika ada
+            if ($id) {
+                $old = $model->find($id);
+                if ($old && $old['gambar']) {
+                    $oldPath = $uploadPath . $old['gambar'];
+                    if (file_exists($oldPath)) unlink($oldPath);
+                }
+            }
+
+            $data['gambar'] = $newName;
+
+        } elseif ($this->request->getPost('hapus_gambar') == '1' && $id) {
+            // Admin klik "Hapus Gambar"
+            $old = $model->find($id);
+            if ($old && $old['gambar']) {
+                $oldPath = FCPATH . 'uploads/blogs/' . $old['gambar'];
+                if (file_exists($oldPath)) unlink($oldPath);
+            }
+            $data['gambar'] = null;
+        }
+
+        // Simpan ke database
+        if ($id) {
+            $model->update($id, $data);
+            $msg = 'Artikel berhasil diperbarui.';
+        } else {
+            $model->insert($data);
+            $msg = 'Artikel berhasil ditambahkan.';
+        }
+
+        return redirect()->to('/admin/blogs')->with('success', $msg);
     }
 
     public function blogsDelete(int $id): \CodeIgniter\HTTP\ResponseInterface
     {
-        (new BlogModel())->delete($id);
+        $model = new BlogModel();
+        $blog  = $model->find($id);
+
+        // Hapus file gambar jika ada
+        if ($blog && $blog['gambar']) {
+            $path = FCPATH . 'uploads/blogs/' . $blog['gambar'];
+            if (file_exists($path)) unlink($path);
+        }
+
+        $model->delete($id);
         return redirect()->to('/admin/blogs')->with('success','Artikel berhasil dihapus.');
     }
 }
