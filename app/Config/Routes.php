@@ -28,27 +28,33 @@ $routes->get('admin/logout',        'AdminController::logout');
 
 // ── Admin (butuh login) ───────────────────────────────────────
 $routes->group('admin', ['filter' => 'adminAuth'], function($routes) {
-    $routes->get('',                              'AdminController::dashboard');
+    $routes->get('',                                'AdminController::dashboard');
 
     // Responden
-    $routes->get('mahasiswa',                     'AdminController::mahasiswa');
-    $routes->get('mahasiswa/(:num)',              'AdminController::respondenDetail/$1');
-    $routes->get('mahasiswa/delete/(:num)',       'AdminController::respondenDelete/$1');
+    $routes->get('mahasiswa',                       'AdminController::mahasiswa');
+    $routes->get('mahasiswa/(:num)',                'AdminController::respondenDetail/$1');
+    $routes->get('mahasiswa/delete/(:num)',         'AdminController::respondenDelete/$1');
 
-    // Hasil tes
-    $routes->get('hasil-tes',                     'AdminController::hasilTes');
+    // Hasil Tes
+    $routes->get('hasil-tes',                       'AdminController::hasilTes');
 
-    // Form Kuesioner CRUD
-    $routes->get('form-fields',                   'AdminController::formFields');
-    $routes->post('form-fields/save',             'AdminController::formFieldsSave');
-    $routes->get('form-fields/delete/(:num)',     'AdminController::formFieldsDelete/$1');
-    $routes->post('form-fields/toggle/(:num)',    'AdminController::formFieldsToggle/$1');
+    // Pertanyaan DASS-21
+    $routes->get('pertanyaan-dass',                 'AdminController::pertanyaanDass');
+    $routes->post('pertanyaan-dass/save',           'AdminController::pertanyaanDassSave');
+    $routes->get('pertanyaan-dass/delete/(:num)',   'AdminController::pertanyaanDassDelete/$1');
+    $routes->post('pertanyaan-dass/toggle/(:num)',  'AdminController::pertanyaanDassToggle/$1');
+
+    // Form Fields
+    $routes->get('form-fields',                     'AdminController::formFields');
+    $routes->post('form-fields/save',               'AdminController::formFieldsSave');
+    $routes->get('form-fields/delete/(:num)',       'AdminController::formFieldsDelete/$1');
+    $routes->post('form-fields/toggle/(:num)',      'AdminController::formFieldsToggle/$1');
 
     // Blog
-    $routes->get('blogs',                         'AdminController::blogs');
-    $routes->post('blogs/save',                   'AdminController::blogsSave');
-    $routes->get('blogs/delete/(:num)',           'AdminController::blogsDelete/$1');
+    $routes->get('blogs',                           'AdminController::blogs');
+    $routes->post('blogs/save',                     'AdminController::blogsSave');
+    $routes->get('blogs/delete/(:num)',             'AdminController::blogsDelete/$1');
 
     // Security
-    $routes->get('security-logs',                 'AdminController::securityLogs');
+    $routes->get('security-logs',                   'AdminController::securityLogs');
 });

@@ -226,6 +226,9 @@
       </a>
 
       <div class="menu-label">Kuesioner</div>
+      <a href="<?= base_url('admin/pertanyaan-dass') ?>" class="sidebar-link <?= ($activePage??'')==='pertanyaan_dass'?'active':'' ?>">
+        <i class="bi bi-patch-question-fill"></i> Pertanyaan DASS-21
+      </a>
       <a href="<?= base_url('admin/form-fields') ?>" class="sidebar-link <?= ($activePage??'')=== 'form_fields'?'active':'' ?>">
         <i class="bi bi-ui-checks"></i> Field Kuesioner
       </a>

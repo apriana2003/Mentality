@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Waktu pembuatan: 17 Mar 2026 pada 08.37
+-- Waktu pembuatan: 19 Mar 2026 pada 16.46
 -- Versi server: 10.4.32-MariaDB
 -- Versi PHP: 8.1.25
 
@@ -40,7 +40,7 @@ CREATE TABLE `admin` (
 --
 
 INSERT INTO `admin` (`id`, `nama`, `email`, `password`, `created_at`) VALUES
-(1, 'Super Admin', 'admin@mentality.id', '$2y$12$eImiTXuWVxfM37uY4JANjOe5XscKhW2tMQHNQBCJa/Oa9A.R7Jhe2', '2026-03-17 14:33:28');
+(1, 'Super Admin', 'admin@mentality.id', '$2y$10$T3FP6/ObmhNCudDo7yXkKOyfDU6Jhk0Kl1T0BxOetcYE6gWK9lfka', '2026-03-17 14:33:28');
 
 -- --------------------------------------------------------
 
@@ -86,6 +86,18 @@ CREATE TABLE `chat_messages` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT 'Waktu pesan dikirim'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Riwayat pesan chatbot per sesi';
 
+--
+-- Dumping data untuk tabel `chat_messages`
+--
+
+INSERT INTO `chat_messages` (`id`, `session_id`, `role`, `content`, `created_at`) VALUES
+(23, 2, 'user', 'halo', '2026-03-17 20:48:32'),
+(24, 2, 'assistant', 'Halo! 😊 Ada apa nih? Lo mau curhat tentang apa? Gue dengerin, deh! 💬', '2026-03-17 20:48:33'),
+(25, 2, 'user', 'Tips mengurangi stres kuliah', '2026-03-17 20:48:37'),
+(26, 2, 'assistant', 'Stres kuliah itu beneran nggak enak, sih 😔. Tapi, gue punya beberapa tips yang mungkin bisa bantu lo mengurangi stres kuliah, nih!\n\nPertama, coba buat jadwal yang realistis, deh. Jangan terlalu banyak ngambil tugas sekaligus, karena itu bisa bikin lo kepanjangan dan stres. Prioritaskan tugas-tugas yang penting, trus pecah jadi tugas-tugas kecil yang lebih mudah dikelola.\n\nKedua, jangan lupa istirahat, ya! Tidur yang cukup, makan yang sehat, dan olahraga ringan bisa bantu lo mengurangi stres. Gue tahu, kadang-kadang kita suka mager dan malas gerak, tapi percaya deh, olahraga bisa bantu lo merasa lebih baik 🏋️‍♀️.\n\nTerakhir, coba cari kegiatan yang lo suka, nih! Apakah itu membaca, mendengarkan musik, atau ngobrol sama temen-temen, kegiatan yang lo suka bisa bantu lo mengalihkan pikiran dari stres kuliah.\n\nGimana, nih? Lo punya kegiatan favorit yang bisa bantu lo mengurangi stres? 🤔', '2026-03-17 20:48:38'),
+(27, 2, 'user', 'mantap men', '2026-03-17 20:49:01'),
+(28, 2, 'assistant', 'Makasih, bro! 🙌 Gue senang bisa bantu. Ingat, stres kuliah itu normal, tapi jangan sampai lo kewalahan, deh! 🤯 Jika perlu, lo bisa curhat sama gue atau temen-temen lainnya. Kami ada buat mendengarkan dan membantu, kok! 💬\n\nOh iya, lo udah pernah coba teknik relaksasi, seperti meditasi atau deep breathing, nggak? 🙏 Ini bisa bantu lo mengurangi stres dan merasa lebih tenang, lho! 🌟', '2026-03-17 20:49:02');
+
 -- --------------------------------------------------------
 
 --
@@ -99,6 +111,50 @@ CREATE TABLE `chat_sessions` (
   `hasil_tes_id` int(10) UNSIGNED DEFAULT NULL COMMENT 'Diisi jika sudah menyelesaikan tes',
   `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT 'Waktu sesi dimulai'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Sesi percakapan chatbot AI';
+
+--
+-- Dumping data untuk tabel `chat_sessions`
+--
+
+INSERT INTO `chat_sessions` (`id`, `session_token`, `mahasiswa_id`, `hasil_tes_id`, `created_at`) VALUES
+(1, '4cdb076b14ebc9b92b4d53d6731d20124f323de00ee2607ebcc28426d635bf5d', NULL, NULL, '2026-03-17 20:11:09'),
+(2, '3217f9cac7972fbf7df3bee58c0170e2c97b0b3777762274bb8fc25ad78c4915', 1, 1, '2026-03-17 20:48:25'),
+(3, 'a070db86aae32fb4c760a7fadddb17b8ef61f1b21c1307f8d97169508672b234', NULL, NULL, '2026-03-19 20:57:13'),
+(4, 'dafe60dae24fc5428b079fed5903aa862f947c5a3af9311a7fa4603cf9a26bad', 3, 3, '2026-03-19 22:43:31');
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `form_fields`
+--
+
+CREATE TABLE `form_fields` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `label` varchar(150) NOT NULL COMMENT 'Label tampilan field',
+  `name` varchar(80) NOT NULL COMMENT 'Nama field (unik, huruf kecil & underscore)',
+  `type` enum('text','email','number','select','radio','textarea') NOT NULL DEFAULT 'text',
+  `placeholder` varchar(150) DEFAULT NULL,
+  `options` text DEFAULT NULL COMMENT 'Untuk select/radio: JSON array ["Opsi1","Opsi2"]',
+  `required` tinyint(1) NOT NULL DEFAULT 1 COMMENT '1=wajib, 0=opsional',
+  `aktif` tinyint(1) NOT NULL DEFAULT 1 COMMENT '1=tampil, 0=sembunyikan',
+  `urutan` tinyint(3) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Urutan tampil di form',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Field dinamis form data diri mahasiswa';
+
+--
+-- Dumping data untuk tabel `form_fields`
+--
+
+INSERT INTO `form_fields` (`id`, `label`, `name`, `type`, `placeholder`, `options`, `required`, `aktif`, `urutan`, `created_at`, `updated_at`) VALUES
+(1, 'Nama Lengkap', 'nama', 'text', 'Contoh: Budi Santoso', NULL, 1, 1, 1, '2026-03-19 22:16:17', NULL),
+(2, 'Alamat Email', 'email', 'email', 'contoh@email.com', NULL, 1, 1, 2, '2026-03-19 22:16:17', NULL),
+(3, 'NIM', 'nim', 'text', 'Nomor Induk Mahasiswa', NULL, 0, 1, 3, '2026-03-19 22:16:17', NULL),
+(4, 'Usia', 'usia', 'number', 'Usia dalam tahun', NULL, 1, 1, 4, '2026-03-19 22:16:17', NULL),
+(5, 'Perguruan Tinggi', 'universitas', 'text', 'Nama universitas / kampus', NULL, 0, 1, 5, '2026-03-19 22:16:17', NULL),
+(6, 'Jenis Kelamin', 'jenis_kelamin', 'radio', NULL, '[\"Laki-laki\",\"Perempuan\"]', 1, 1, 6, '2026-03-19 22:16:17', NULL),
+(7, 'Nomor Hp', 'nomor_hp', 'number', 'Contoh : 081x-xxxx-xxxx', NULL, 0, 1, 7, '2026-03-19 22:23:34', '2026-03-19 22:23:34'),
+(8, 'Hobi', 'hobi', 'text', 'Contoh : Desainer Website', '[\"Desainer\",\"Freelancer\",\"Pelajar\\/Mahasiswa\",\"Guru\"]', 1, 1, 8, '2026-03-19 22:45:39', '2026-03-19 22:45:39');
 
 -- --------------------------------------------------------
 
@@ -119,6 +175,15 @@ CREATE TABLE `hasil_tes` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT 'Waktu pengerjaan tes'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Hasil tes DASS-21 peserta';
 
+--
+-- Dumping data untuk tabel `hasil_tes`
+--
+
+INSERT INTO `hasil_tes` (`id`, `mahasiswa_id`, `skor_depresi`, `skor_kecemasan`, `skor_stres`, `kategori_depresi`, `kategori_kecemasan`, `kategori_stres`, `jawaban_json`, `created_at`) VALUES
+(1, 1, 28, 28, 30, 'Sangat Berat', 'Sangat Berat', 'Berat', '{\"1\":1,\"2\":1,\"3\":1,\"4\":1,\"5\":1,\"6\":1,\"7\":1,\"8\":1,\"9\":2,\"10\":3,\"11\":3,\"12\":3,\"13\":3,\"14\":3,\"15\":3,\"16\":0,\"17\":3,\"18\":3,\"19\":3,\"20\":3,\"21\":3}', '2026-03-17 20:13:15'),
+(2, 2, 2, 0, 0, 'Normal', 'Normal', 'Normal', '{\"1\":0,\"2\":0,\"3\":0,\"4\":0,\"5\":0,\"6\":0,\"7\":0,\"8\":0,\"9\":0,\"10\":0,\"11\":0,\"12\":0,\"13\":0,\"14\":0,\"15\":0,\"16\":0,\"17\":1,\"18\":0,\"19\":0,\"20\":0,\"21\":0}', '2026-03-19 22:03:39'),
+(3, 3, 42, 42, 42, 'Sangat Berat', 'Sangat Berat', 'Sangat Berat', '{\"1\":3,\"2\":3,\"3\":3,\"4\":3,\"5\":3,\"6\":3,\"7\":3,\"8\":3,\"9\":3,\"10\":3,\"11\":3,\"12\":3,\"13\":3,\"14\":3,\"15\":3,\"16\":3,\"17\":3,\"18\":3,\"19\":3,\"20\":3,\"21\":3}', '2026-03-19 22:08:43');
+
 -- --------------------------------------------------------
 
 --
@@ -135,6 +200,31 @@ CREATE TABLE `mahasiswa` (
   `usia` tinyint(3) UNSIGNED NOT NULL COMMENT 'Usia dalam tahun',
   `created_at` datetime NOT NULL DEFAULT current_timestamp() COMMENT 'Waktu pengisian data'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Data peserta tes kesehatan mental';
+
+--
+-- Dumping data untuk tabel `mahasiswa`
+--
+
+INSERT INTO `mahasiswa` (`id`, `nama`, `email`, `nim`, `universitas`, `jenis_kelamin`, `usia`, `created_at`) VALUES
+(1, 'ana', 'ana@gmail.com', '1', 'STMIK TIME', 'P', 23, '2026-03-17 20:12:45'),
+(2, 'Anang', 'anang@gmail.com', '2', 'STMIK TIME', 'L', 23, '2026-03-19 22:03:03'),
+(3, 'Apriana', 'aprianabrtrg@gmail.com', '2245046', 'STMIK TIME', 'P', 22, '2026-03-19 22:08:22');
+
+-- --------------------------------------------------------
+
+--
+-- Struktur dari tabel `migrations`
+--
+
+CREATE TABLE `migrations` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `version` varchar(255) NOT NULL,
+  `class` varchar(255) NOT NULL,
+  `group` varchar(255) NOT NULL,
+  `namespace` varchar(255) NOT NULL,
+  `time` int(11) NOT NULL,
+  `batch` int(11) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -192,6 +282,13 @@ ALTER TABLE `chat_sessions`
   ADD KEY `idx_hasil_tes_id` (`hasil_tes_id`);
 
 --
+-- Indeks untuk tabel `form_fields`
+--
+ALTER TABLE `form_fields`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_name` (`name`);
+
+--
 -- Indeks untuk tabel `hasil_tes`
 --
 ALTER TABLE `hasil_tes`
@@ -204,6 +301,12 @@ ALTER TABLE `hasil_tes`
 ALTER TABLE `mahasiswa`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_email` (`email`);
+
+--
+-- Indeks untuk tabel `migrations`
+--
+ALTER TABLE `migrations`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indeks untuk tabel `security_logs`
@@ -234,25 +337,37 @@ ALTER TABLE `blogs`
 -- AUTO_INCREMENT untuk tabel `chat_messages`
 --
 ALTER TABLE `chat_messages`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
 
 --
 -- AUTO_INCREMENT untuk tabel `chat_sessions`
 --
 ALTER TABLE `chat_sessions`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT untuk tabel `form_fields`
+--
+ALTER TABLE `form_fields`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT untuk tabel `hasil_tes`
 --
 ALTER TABLE `hasil_tes`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT untuk tabel `mahasiswa`
 --
 ALTER TABLE `mahasiswa`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT untuk tabel `migrations`
+--
+ALTER TABLE `migrations`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT untuk tabel `security_logs`

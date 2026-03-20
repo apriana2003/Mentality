@@ -27,14 +27,23 @@ class Filters extends BaseConfig
 
     public array $methods = [];
 
-    // CSRF hanya untuk form HTML biasa
-    // Chatbot pakai AJAX JSON jadi tidak butuh CSRF di sini
+    /**
+     * CSRF hanya untuk form HTML biasa.
+     * Route AJAX (chatbot, toggle) dikecualikan karena
+     * tidak menggunakan form HTML — mereka pakai fetch() JSON.
+     *
+     * Validasi keamanan AJAX dilakukan via header
+     * X-Requested-With: XMLHttpRequest di controller.
+     */
     public array $filters = [
         'csrf' => [
             'before' => [
                 'form/*',
-                'tes/*',
-                'admin/*',
+                'tes/submit',
+                'admin/login',
+                'admin/blogs/save',
+                'admin/pertanyaan-dass/save',
+                'admin/form-fields/save',
             ]
         ],
     ];

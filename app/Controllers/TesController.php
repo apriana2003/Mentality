@@ -3,41 +3,26 @@
 namespace App\Controllers;
 
 use App\Models\HasilTesModel;
+use App\Models\PertanyaanDassModel;
 
 class TesController extends BaseController
 {
-    // Pertanyaan DASS-21 dengan mapping subskala
-    private array $questions = [
-        1  => ['text' => 'Saya merasa sulit untuk tenang',                          'skala' => 'stres'],
-        2  => ['text' => 'Saya menyadari mulut terasa kering',                      'skala' => 'kecemasan'],
-        3  => ['text' => 'Saya tidak dapat merasakan perasaan positif sama sekali', 'skala' => 'depresi'],
-        4  => ['text' => 'Saya mengalami gangguan pernapasan (napas cepat, sesak)', 'skala' => 'kecemasan'],
-        5  => ['text' => 'Saya merasa sulit untuk memulai sesuatu',                 'skala' => 'depresi'],
-        6  => ['text' => 'Saya cenderung bereaksi berlebihan terhadap situasi',     'skala' => 'stres'],
-        7  => ['text' => 'Saya mengalami tremor (gemetar)',                         'skala' => 'kecemasan'],
-        8  => ['text' => 'Saya merasa banyak menghabiskan energi karena cemas',     'skala' => 'stres'],
-        9  => ['text' => 'Saya khawatir dengan situasi panik yang mempermalukan',   'skala' => 'kecemasan'],
-        10 => ['text' => 'Saya merasa tidak ada yang bisa diharapkan ke depan',     'skala' => 'depresi'],
-        11 => ['text' => 'Saya merasa gelisah',                                     'skala' => 'stres'],
-        12 => ['text' => 'Saya merasa sulit untuk rileks',                          'skala' => 'stres'],
-        13 => ['text' => 'Saya merasa sedih dan menderita',                         'skala' => 'depresi'],
-        14 => ['text' => 'Saya tidak toleran dengan hal yang menghambat aktivitas', 'skala' => 'stres'],
-        15 => ['text' => 'Saya merasa hampir panik',                                'skala' => 'kecemasan'],
-        16 => ['text' => 'Saya tidak mampu antusias dengan apapun',                 'skala' => 'depresi'],
-        17 => ['text' => 'Saya merasa diri saya tidak berharga',                    'skala' => 'depresi'],
-        18 => ['text' => 'Saya merasa mudah tersinggung',                           'skala' => 'stres'],
-        19 => ['text' => 'Saya menyadari detak jantung yang tidak biasa',           'skala' => 'kecemasan'],
-        20 => ['text' => 'Saya merasa takut tanpa alasan yang jelas',               'skala' => 'kecemasan'],
-        21 => ['text' => 'Saya merasa hidup tidak berarti',                         'skala' => 'depresi'],
-    ];
-
     public function index(): string
     {
         if (!session()->get('mahasiswa_id')) {
             return redirect()->to('/form')->with('info', 'Silakan isi data diri terlebih dahulu.');
         }
+
+        // Ambil pertanyaan dari database (aktif saja)
+        $pertanyaanModel = new PertanyaanDassModel();
+        $questions       = $pertanyaanModel->getAktif();
+
+        if (empty($questions)) {
+            return redirect()->to('/form')->with('error', 'Pertanyaan tes belum dikonfigurasi. Hubungi administrator.');
+        }
+
         return view('layouts/main', [
-            'content'   => view('tes/index', ['questions' => $this->questions]),
+            'content'   => view('tes/index', ['questions' => $questions]),
             'title'     => 'Tes Mental DASS-21 - Mentality',
         ]);
     }
@@ -45,35 +30,45 @@ class TesController extends BaseController
     public function submit(): \CodeIgniter\HTTP\ResponseInterface
     {
         $mahasiswaId = session()->get('mahasiswa_id');
-        if (!$mahasiswaId) {
-            return redirect()->to('/form');
+        if (!$mahasiswaId) return redirect()->to('/form');
+
+        // Ambil pertanyaan aktif dari DB
+        $pertanyaanModel = new PertanyaanDassModel();
+        $questions       = $pertanyaanModel->getAktif();
+
+        if (empty($questions)) {
+            return redirect()->to('/tes')->with('error', 'Pertanyaan tidak ditemukan.');
         }
 
-        $jawaban     = $this->request->getPost('jawaban') ?? [];
+        $jawaban       = $this->request->getPost('jawaban') ?? [];
         $jawabanBersih = [];
 
-        // Validasi: semua 21 soal harus dijawab
-        for ($i = 1; $i <= 21; $i++) {
-            $val = (int) ($jawaban[$i] ?? -1);
+        // Validasi semua pertanyaan aktif harus dijawab
+        foreach ($questions as $q) {
+            $no  = $q['nomor'];
+            $val = isset($jawaban[$no]) ? (int)$jawaban[$no] : -1;
+
             if ($val < 0 || $val > 3) {
-                return redirect()->back()->with('error', "Pertanyaan nomor {$i} belum dijawab.");
+                return redirect()->back()->with('error', "Pertanyaan nomor {$no} belum dijawab.");
             }
-            $jawabanBersih[$i] = $val;
+            $jawabanBersih[$no] = $val;
         }
 
-        // Hitung skor per subskala (jumlah × 2)
+        // Hitung skor per subskala
         $skorDepresi   = 0;
         $skorKecemasan = 0;
         $skorStres     = 0;
 
-        foreach ($this->questions as $no => $q) {
+        foreach ($questions as $q) {
+            $val = $jawabanBersih[$q['nomor']];
             match($q['skala']) {
-                'depresi'   => $skorDepresi   += $jawabanBersih[$no],
-                'kecemasan' => $skorKecemasan += $jawabanBersih[$no],
-                'stres'     => $skorStres     += $jawabanBersih[$no],
+                'depresi'   => $skorDepresi   += $val,
+                'kecemasan' => $skorKecemasan += $val,
+                'stres'     => $skorStres     += $val,
             };
         }
 
+        // Kalikan 2 sesuai standar DASS-21
         $skorDepresi   *= 2;
         $skorKecemasan *= 2;
         $skorStres     *= 2;
@@ -91,7 +86,6 @@ class TesController extends BaseController
             'jawaban_json'       => json_encode($jawabanBersih),
         ]);
 
-        // Simpan di session untuk chatbot
         session()->set('hasil_tes_id', $id);
 
         return redirect()->to("/tes/hasil/{$id}");
@@ -113,7 +107,7 @@ class TesController extends BaseController
         );
 
         return view('layouts/main', [
-            'content' => view('hasil/index', compact('hasil', 'status')),
+            'content' => view('hasil/index', compact('hasil','status')),
             'title'   => 'Hasil Tes - Mentality',
         ]);
     }
