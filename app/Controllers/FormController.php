@@ -54,40 +54,33 @@ class FormController extends BaseController
             }
         }
 
+        // Kembalikan error validasi field
         if (!empty($errors)) {
             return redirect()->back()->withInput()->with('errors', $errors);
         }
 
+        // Validasi model CI4
         $model = new MahasiswaModel();
-
         if (!$model->validate($data)) {
             return redirect()->back()->withInput()->with('errors', $model->errors());
         }
 
-        // ── Cek apakah email sudah pernah daftar ─────────────────
+        // ── Cek duplikat email ────────────────────────────────────
         $existing = $model->where('email', $data['email'])->first();
 
         if ($existing) {
-            // Email sudah ada — gunakan ID yang lama, tidak insert baru
-            $id = $existing['id'];
-
-            // Update data jika ada perubahan (nama, universitas, dll)
-            $model->update($id, [
-                'nama'          => $data['nama'],
-                'nim'           => $data['nim']          ?? $existing['nim'],
-                'universitas'   => $data['universitas']  ?? $existing['universitas'],
-                'jenis_kelamin' => $data['jenis_kelamin'],
-                'usia'          => $data['usia'],
+            // Tandai field email sebagai error supaya highlight merah
+            return redirect()->back()->withInput()->with('errors', [
+                'email' => 'Email ' . $data['email'] . ' sudah digunakan oleh responden lain. Silakan gunakan email yang berbeda.',
             ]);
+        }
 
-        } else {
-            // Email baru — insert data
-            $id = $model->insert($data);
+        // ── Insert data baru ──────────────────────────────────────
+        $id = $model->insert($data);
 
-            if (!$id) {
-                return redirect()->back()->withInput()
-                    ->with('errors', ['general' => 'Gagal menyimpan data. Silakan coba lagi.']);
-            }
+        if (!$id) {
+            return redirect()->back()->withInput()
+                ->with('errors', ['general' => 'Gagal menyimpan data. Silakan coba lagi.']);
         }
 
         // Simpan ke session
