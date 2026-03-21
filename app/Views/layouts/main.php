@@ -112,8 +112,8 @@
         <h6 class="text-white fw-bold mb-3"><i class="bi bi-telephone-fill me-2 text-danger"></i>Butuh Bantuan Segera?</h6>
         <div class="crisis-card p-3 rounded-3">
           <p class="small text-white-50 mb-2">Hotline Kesehatan Mental Indonesia:</p>
-          <p class="text-white fw-semibold mb-1"><i class="bi bi-telephone me-2 text-success"></i>119 ext 8 — Into The Light</p>
-          <p class="text-white fw-semibold mb-0"><i class="bi bi-telephone me-2 text-success"></i>021-500-454 — RSJ Soeharto Heerdjan</p>
+          <p class="text-white fw-semibold mb-1"><i class="bi bi-telephone me-2 text-success"></i>Call Center — 112</p>
+          <p class="text-white fw-semibold mb-0"><i class="bi bi-telephone me-2 text-success"></i>0618360542 — RS Jiwa (RSJ) Prof. Dr. Muhammad Ildrem</p>
         </div>
       </div>
     </div>

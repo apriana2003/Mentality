@@ -156,19 +156,42 @@
       </div>
     </div>
     <div class="row g-4">
-      <?php foreach($recentBlogs as $blog): ?>
+      <?php
+      $icons = ['Stres'=>'bi-wind','Kecemasan'=>'bi-lightning','Depresi'=>'bi-cloud-rain','Tips'=>'bi-lightbulb','Trauma'=>'bi-bandaid'];
+      foreach($recentBlogs as $blog):
+      ?>
       <div class="col-lg-4 col-md-6">
         <a href="<?= base_url('blogs/' . esc($blog['slug'])) ?>" class="text-decoration-none">
           <div class="blog-card">
+
+            <!-- ── Gambar atau icon default ── -->
+            <?php if (!empty($blog['gambar']) && file_exists(FCPATH . 'uploads/blogs/' . $blog['gambar'])): ?>
+            <div style="height:180px;overflow:hidden">
+              <img
+                src="<?= base_url('uploads/blogs/' . esc($blog['gambar'])) ?>"
+                alt="<?= esc($blog['judul']) ?>"
+                style="width:100%;height:100%;object-fit:cover;transition:transform .3s ease"
+                onmouseover="this.style.transform='scale(1.05)'"
+                onmouseout="this.style.transform='scale(1)'">
+            </div>
+            <?php else: ?>
             <div class="blog-img">
-              <?php $icons=['Stres'=>'bi-wind','Kecemasan'=>'bi-lightning','Depresi'=>'bi-cloud-rain','Tips'=>'bi-lightbulb','Trauma'=>'bi-bandaid']; ?>
               <i class="bi <?= $icons[$blog['kategori']] ?? 'bi-journal-text' ?>"></i>
             </div>
+            <?php endif; ?>
+
             <div class="blog-body">
               <span class="blog-category"><?= esc($blog['kategori']) ?></span>
               <h5 class="blog-title text-dark"><?= esc($blog['judul']) ?></h5>
               <p class="blog-excerpt"><?= esc(substr($blog['ringkasan'] ?? '', 0, 90)) ?>...</p>
-              <span class="small text-green-main fw-bold mt-2 d-block">Baca selengkapnya <i class="bi bi-arrow-right"></i></span>
+              <div class="d-flex justify-content-between align-items-center mt-2">
+                <span class="small text-muted">
+                  <i class="bi bi-calendar3 me-1"></i><?= date('d M Y', strtotime($blog['created_at'])) ?>
+                </span>
+                <span class="small text-green-main fw-bold">
+                  Baca <i class="bi bi-arrow-right"></i>
+                </span>
+              </div>
             </div>
           </div>
         </a>
