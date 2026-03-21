@@ -39,7 +39,7 @@ class AdminController extends BaseController
     }
 
     // ══════════════════════════════════════════════════════════
-    // DASHBOAR
+    // DASHBOARD
     // ══════════════════════════════════════════════════════════
 
     public function dashboard(): string
@@ -325,7 +325,7 @@ class AdminController extends BaseController
     }
 
     // ══════════════════════════════════════════════════════════
-    // KELOLA BLOG (dengan upload gambar)
+    // KELOLA BLOG (Cloudinary)
     // ══════════════════════════════════════════════════════════
 
     public function blogs(): string
@@ -373,11 +373,10 @@ class AdminController extends BaseController
             'published' => $this->request->getPost('published') ? 1 : 0,
         ];
 
-        // ── Handle upload gambar ──────────────────────────────
+        // ── Handle upload gambar ke Cloudinary ───────────────
         $file = $this->request->getFile('gambar');
 
         if ($file && $file->isValid() && !$file->hasMoved()) {
-            // Validasi tipe & ukuran
             $allowedTypes = ['image/jpeg','image/jpg','image/png','image/webp'];
             $maxSize      = 2048; // 2MB dalam KB
 
@@ -391,39 +390,34 @@ class AdminController extends BaseController
                     ->with('error', 'Ukuran gambar maksimal 2MB.');
             }
 
-            // Generate nama file unik
-            $newName = 'blog_' . time() . '_' . uniqid() . '.' . $file->getExtension();
-            $uploadPath = FCPATH . 'uploads/blogs/';
+            // Upload ke Cloudinary
+            $cloudinary = new \App\Libraries\CloudinaryHelper();
+            $imageUrl   = $cloudinary->upload($file->getTempName(), 'mentality/blogs');
 
-            // Buat folder jika belum ada
-            if (!is_dir($uploadPath)) {
-                mkdir($uploadPath, 0755, true);
+            if (!$imageUrl) {
+                return redirect()->back()->withInput()
+                    ->with('error', 'Gagal upload gambar ke Cloudinary. Coba lagi.');
             }
 
-            $file->move($uploadPath, $newName);
-
-            // Hapus gambar lama jika ada
+            // Hapus gambar lama di Cloudinary jika ada
             if ($id) {
                 $old = $model->find($id);
-                if ($old && $old['gambar']) {
-                    $oldPath = $uploadPath . $old['gambar'];
-                    if (file_exists($oldPath)) unlink($oldPath);
+                if ($old && $old['gambar'] && str_starts_with($old['gambar'], 'http')) {
+                    $cloudinary->delete($old['gambar']);
                 }
             }
 
-            $data['gambar'] = $newName;
+            $data['gambar'] = $imageUrl;
 
         } elseif ($this->request->getPost('hapus_gambar') == '1' && $id) {
-            // Admin klik "Hapus Gambar"
             $old = $model->find($id);
-            if ($old && $old['gambar']) {
-                $oldPath = FCPATH . 'uploads/blogs/' . $old['gambar'];
-                if (file_exists($oldPath)) unlink($oldPath);
+            if ($old && $old['gambar'] && str_starts_with($old['gambar'], 'http')) {
+                $cloudinary = new \App\Libraries\CloudinaryHelper();
+                $cloudinary->delete($old['gambar']);
             }
             $data['gambar'] = null;
         }
 
-        // Simpan ke database
         if ($id) {
             $model->update($id, $data);
             $msg = 'Artikel berhasil diperbarui.';
@@ -440,10 +434,10 @@ class AdminController extends BaseController
         $model = new BlogModel();
         $blog  = $model->find($id);
 
-        // Hapus file gambar jika ada
-        if ($blog && $blog['gambar']) {
-            $path = FCPATH . 'uploads/blogs/' . $blog['gambar'];
-            if (file_exists($path)) unlink($path);
+        // Hapus gambar dari Cloudinary jika ada
+        if ($blog && $blog['gambar'] && str_starts_with($blog['gambar'], 'http')) {
+            $cloudinary = new \App\Libraries\CloudinaryHelper();
+            $cloudinary->delete($blog['gambar']);
         }
 
         $model->delete($id);
