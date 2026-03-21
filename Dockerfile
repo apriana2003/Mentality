@@ -19,34 +19,30 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-RUN a2dismod mpm_event || true \
-    && a2dismod mpm_worker || true \
-    && a2dismod mpm_prefork || true \
-    && a2enmod mpm_prefork \
-    && a2enmod rewrite
+RUN sed -i 's/^ServerName.*//' /etc/apache2/apache2.conf || true
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-RUN echo '<VirtualHost *:80>\n\
-    DocumentRoot /var/www/html/public\n\
+RUN a2enmod rewrite
+
+RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' \
+    /etc/apache2/sites-available/000-default.conf
+
+RUN sed -i '/<\/VirtualHost>/i \
     <Directory /var/www/html/public>\n\
         Options Indexes FollowSymLinks\n\
         AllowOverride All\n\
         Require all granted\n\
-    </Directory>\n\
-</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
+    </Directory>' /etc/apache2/sites-available/000-default.conf
 
 WORKDIR /var/www/html
 
 COPY composer.json composer.lock ./
-
 RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
 
 COPY . .
-
 RUN composer run-script post-install-cmd --no-interaction || true
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/writable
 
 EXPOSE 80
-
-CMD ["apache2-foreground"]
