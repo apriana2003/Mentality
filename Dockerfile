@@ -1,4 +1,4 @@
-FROM php:8.2-apache
+FROM php:8.2-fpm
 
 RUN apt-get update -y && apt-get install -y --no-install-recommends \
     libzip-dev \
@@ -6,6 +6,7 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
     libpng-dev \
     libxml2-dev \
     libicu-dev \
+    nginx \
     unzip \
     curl \
     && docker-php-ext-install \
@@ -19,20 +20,21 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-RUN sed -i 's/^ServerName.*//' /etc/apache2/apache2.conf || true
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
-RUN a2enmod rewrite
-
-RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' \
-    /etc/apache2/sites-available/000-default.conf
-
-RUN sed -i '/<\/VirtualHost>/i \
-    <Directory /var/www/html/public>\n\
-        Options Indexes FollowSymLinks\n\
-        AllowOverride All\n\
-        Require all granted\n\
-    </Directory>' /etc/apache2/sites-available/000-default.conf
+# Nginx config untuk CI4
+RUN echo 'server { \n\
+    listen 80; \n\
+    root /var/www/html/public; \n\
+    index index.php index.html; \n\
+    location / { \n\
+        try_files $uri $uri/ /index.php?$query_string; \n\
+    } \n\
+    location ~ \.php$ { \n\
+        fastcgi_pass 127.0.0.1:9000; \n\
+        fastcgi_index index.php; \n\
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \n\
+        include fastcgi_params; \n\
+    } \n\
+}' > /etc/nginx/sites-available/default
 
 WORKDIR /var/www/html
 
@@ -46,4 +48,5 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/writable
 
 EXPOSE 80
-#docker
+
+CMD service nginx start && php-fpm
