@@ -33,7 +33,12 @@ server { \n\
         fastcgi_pass 127.0.0.1:9000; \n\
         fastcgi_index index.php; \n\
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \n\
+        fastcgi_param PATH_INFO $fastcgi_path_info; \n\
+        fastcgi_split_path_info ^(.+\.php)(/.+)$; \n\
         include fastcgi_params; \n\
+    } \n\
+    location ~ /\.ht { \n\
+        deny all; \n\
     } \n\
 }' > /etc/nginx/sites-available/default
 
