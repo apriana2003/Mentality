@@ -12,9 +12,9 @@
         <article class="card-mentality p-0 overflow-hidden">
 
           <!-- Gambar header artikel -->
-          <?php if ($blog['gambar'] && file_exists(FCPATH . 'uploads/blogs/' . $blog['gambar'])): ?>
+          <?php if ($blog['gambar']): ?>
           <div style="height:280px;overflow:hidden">
-            <img src="<?= base_url('uploads/blogs/' . esc($blog['gambar'])) ?>"
+            <img src="<?= esc($blog['gambar']) ?>"
               alt="<?= esc($blog['judul']) ?>"
               style="width:100%;height:100%;object-fit:cover">
           </div>
