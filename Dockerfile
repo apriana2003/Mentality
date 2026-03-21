@@ -21,7 +21,8 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-RUN echo 'server { \n\
+RUN echo 'client_max_body_size 10M;\n\
+server { \n\
     listen 80; \n\
     root /var/www/html/public; \n\
     index index.php index.html; \n\
