@@ -21,8 +21,9 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Enable Apache mod_rewrite (wajib untuk CI4)
-RUN a2enmod rewrite
+# Fix Apache MPM conflict & enable mod_rewrite
+RUN a2dismod mpm_event mpm_worker 2>/dev/null || true \
+    && a2enmod mpm_prefork rewrite
 
 # Apache virtual host config
 RUN echo '<VirtualHost *:80>\n\
