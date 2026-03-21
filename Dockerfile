@@ -6,6 +6,7 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
     libonig-dev \
     libpng-dev \
     libxml2-dev \
+    libicu-dev \
     unzip \
     curl \
     && docker-php-ext-install \
