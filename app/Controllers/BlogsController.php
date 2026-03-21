@@ -1,40 +1,70 @@
-<?php
-// app/Controllers/BlogsController.php
-namespace App\Controllers;
-
-use App\Models\BlogModel;
-
-class BlogsController extends BaseController
-{
-    public function index(): string
+public function blogsSave(): \CodeIgniter\HTTP\ResponseInterface
     {
         $model = new BlogModel();
-        $page  = (int) ($this->request->getGet('page') ?? 1);
-        $limit = 6;
+        $id    = $this->request->getPost('id');
+        $judul = $this->request->getPost('judul');
 
-        return view('layouts/main', [
-            'content' => view('blogs/index', [
-                'blogs' => $model->getPublished($limit, ($page - 1) * $limit),
-                'page'  => $page,
-                'total' => $model->where('published', 1)->countAllResults(),
-                'limit' => $limit,
-            ]),
-            'title' => 'Blog Kesehatan Mental - Mentality',
-        ]);
-    }
+        $data = [
+            'judul'     => $judul,
+            'slug'      => $id ? $model->find($id)['slug'] : $model->generateSlug($judul),
+            'ringkasan' => $this->request->getPost('ringkasan'),
+            'konten'    => $this->request->getPost('konten'),
+            'kategori'  => $this->request->getPost('kategori'),
+            'published' => $this->request->getPost('published') ? 1 : 0,
+        ];
 
-    public function detail(string $slug): string
-    {
-        $model = new BlogModel();
-        $blog  = $model->getBySlug($slug);
+        // ── Handle upload gambar ke Cloudinary ───────────────
+        $file = $this->request->getFile('gambar');
 
-        if (!$blog) {
-            return redirect()->to('/blogs')->with('error', 'Artikel tidak ditemukan.');
+        if ($file && $file->isValid() && !$file->hasMoved()) {
+            $allowedTypes = ['image/jpeg','image/jpg','image/png','image/webp'];
+            $maxSize      = 2048; // 2MB dalam KB
+
+            if (!in_array($file->getMimeType(), $allowedTypes)) {
+                return redirect()->back()->withInput()
+                    ->with('error', 'Format gambar tidak didukung. Gunakan JPG, PNG, atau WebP.');
+            }
+
+            if ($file->getSizeByUnit('kb') > $maxSize) {
+                return redirect()->back()->withInput()
+                    ->with('error', 'Ukuran gambar maksimal 2MB.');
+            }
+
+            // Upload ke Cloudinary
+            $cloudinary = new \App\Libraries\CloudinaryHelper();
+            $imageUrl   = $cloudinary->upload($file->getTempName(), 'mentality/blogs');
+
+            if (!$imageUrl) {
+                return redirect()->back()->withInput()
+                    ->with('error', 'Gagal upload gambar ke Cloudinary. Coba lagi.');
+            }
+
+            // Hapus gambar lama di Cloudinary jika ada
+            if ($id) {
+                $old = $model->find($id);
+                if ($old && $old['gambar'] && str_starts_with($old['gambar'], 'http')) {
+                    $cloudinary->delete($old['gambar']);
+                }
+            }
+
+            $data['gambar'] = $imageUrl;
+
+        } elseif ($this->request->getPost('hapus_gambar') == '1' && $id) {
+            $old = $model->find($id);
+            if ($old && $old['gambar'] && str_starts_with($old['gambar'], 'http')) {
+                $cloudinary = new \App\Libraries\CloudinaryHelper();
+                $cloudinary->delete($old['gambar']);
+            }
+            $data['gambar'] = null;
         }
 
-        return view('layouts/main', [
-            'content' => view('blogs/detail', ['blog' => $blog]),
-            'title'   => $blog['judul'] . ' - Mentality',
-        ]);
+        if ($id) {
+            $model->update($id, $data);
+            $msg = 'Artikel berhasil diperbarui.';
+        } else {
+            $model->insert($data);
+            $msg = 'Artikel berhasil ditambahkan.';
+        }
+
+        return redirect()->to('/admin/blogs')->with('success', $msg);
     }
-}
