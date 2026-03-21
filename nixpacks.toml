@@ -1,19 +1,9 @@
 [phases.setup]
-nixPkgs = [
-  "php83",
-  "php83Extensions.pdo",
-  "php83Extensions.pdo_mysql", 
-  "php83Extensions.curl",
-  "php83Extensions.mbstring",
-  "php83Extensions.intl",
-  "php83Extensions.json",
-  "php83Extensions.tokenizer",
-  "php83Extensions.openssl",
-  "composer"
-]
+nixPkgs = ["php82", "php82Packages.composer", "apache"]
 
-[phases.build]
-cmds = ["composer install --no-dev --optimize-autoloader"]
+[phases.install]
+dependsOn = ["setup"]
+cmds = ["composer install --no-dev --no-interaction --optimize-autoloader"]
 
 [start]
-cmd = "php spark serve --host 0.0.0.0 --port $PORT"
+cmd = "vendor/bin/heroku-php-apache2 public/"
