@@ -1,37 +1,55 @@
-FROM php:8.3-apache
+FROM php:8.2-apache
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
+# Install dependencies in single layer, no recommends to keep it light
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
     libzip-dev \
-    zip \
+    libonig-dev \
+    libpng-dev \
+    libxml2-dev \
     unzip \
-    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip intl
+    curl \
+    && docker-php-ext-install \
+        pdo \
+        pdo_mysql \
+        mbstring \
+        zip \
+        intl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Set working directory
-WORKDIR /var/www/html
-
-# Copy project files
-COPY . .
-
-# Install dependencies
-RUN composer install --no-dev --optimize-autoloader
-
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/writable
-
-# Apache config untuk CI4
+# Enable Apache mod_rewrite (wajib untuk CI4)
 RUN a2enmod rewrite
 
-COPY docker/apache.conf /etc/apache2/sites-available/000-default.conf
+# Apache virtual host config
+RUN echo '<VirtualHost *:80>\n\
+    DocumentRoot /var/www/html/public\n\
+    <Directory /var/www/html/public>\n\
+        Options Indexes FollowSymLinks\n\
+        AllowOverride All\n\
+        Require all granted\n\
+    </Directory>\n\
+</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
+
+WORKDIR /var/www/html
+
+# Copy composer files dulu (cache layer)
+COPY composer.json composer.lock ./
+
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+
+# Copy semua file project
+COPY . .
+
+# Run post-install scripts
+RUN composer run-script post-install-cmd --no-interaction || true
+
+# Set permissions untuk folder writable CI4
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/writable
 
 EXPOSE 80
 
