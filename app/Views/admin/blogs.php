@@ -19,8 +19,8 @@
 
       <!-- Gambar -->
       <div style="height:160px;overflow:hidden;position:relative;background:var(--green-pale)">
-        <?php if ($b['gambar'] && file_exists(FCPATH . 'uploads/blogs/' . $b['gambar'])): ?>
-          <img src="<?= base_url('uploads/blogs/' . esc($b['gambar'])) ?>"
+        <?php if ($b['gambar']): ?>
+        <img src="<?= esc($b['gambar']) ?>"
             alt="<?= esc($b['judul']) ?>"
             style="width:100%;height:100%;object-fit:cover">
         <?php else: ?>
