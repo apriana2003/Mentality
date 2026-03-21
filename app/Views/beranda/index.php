@@ -7,7 +7,7 @@
   <div class="container position-relative" style="z-index:1">
     <div class="row align-items-center g-5">
       <div class="col-lg-6">
-        <div class="section-badge"><i class="bi bi-heart-pulse"></i> Platform Kesehatan Mental</div>
+        <div class="section-badge"><i class="bi bi-heart-pulse"></i> Platform Monitoring Kesehatan Mental Mahasiswa STMIK TIME</div>
         <h1 class="hero-title mt-2">
           Jaga <span class="highlight">Kesehatan Mental</span><br>Mulai dari Sekarang
         </h1>
@@ -37,7 +37,7 @@
       </div>
       <div class="col-lg-6">
         <div class="hero-card">
-          <div class="pulse-icon"><i class="bi bi-brain"></i></div>
+          <div class="pulse-icon" style="font-size:2.2rem">🧠</div>
           <h5 class="text-white fw-bold mb-2">Tes DASS-21</h5>
           <p class="text-white-50 small mb-3">Alat ukur psikologis terstandarisasi untuk mendeteksi tingkat Depresi, Kecemasan, dan Stres.</p>
           <?php foreach([['bi-person-lines-fill','Isi data diri singkat'],['bi-clipboard2-check','Jawab 21 pertanyaan'],['bi-bar-chart-line','Lihat hasil & rekomendasi'],['bi-robot','Konsultasi dengan AI']] as $s): ?>

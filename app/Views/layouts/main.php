@@ -120,7 +120,7 @@
     <hr class="border-secondary opacity-25">
     <div class="row align-items-center py-3">
       <div class="col-md-6 text-center text-md-start">
-        <p class="text-white-50 small mb-0">&copy; <?= date('Y') ?> Mentality. Dibuat untuk skripsi sistem informasi.</p>
+        <p class="text-white-50 small mb-0">&copy; <?= date('Y') ?> Mentality. Dibuat untuk skripsi sistem informasi STMIK TIME oleh Apriana 2245046  .</p>
       </div>
       <div class="col-md-6 text-center text-md-end">
         <p class="text-white-50 small mb-0"><i class="bi bi-shield-check me-1 text-success"></i>Dilindungi AI Security Monitor</p>
