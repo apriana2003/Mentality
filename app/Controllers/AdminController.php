@@ -39,7 +39,7 @@ class AdminController extends BaseController
     }
 
     // ══════════════════════════════════════════════════════════
-    // DASHBOARD
+    // DASHBOAR
     // ══════════════════════════════════════════════════════════
 
     public function dashboard(): string
