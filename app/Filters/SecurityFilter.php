@@ -12,7 +12,7 @@ class SecurityFilter implements FilterInterface
     private array $sqliPatterns = [
         '/(\bUNION\b.*\bSELECT\b|\bSELECT\b.*\bFROM\b|\bDROP\b.*\bTABLE\b)/i',
         '/(\bINSERT\b|\bUPDATE\b|\bDELETE\b|\bTRUNCATE\b).*\bINTO\b/i',
-        "/(--|\/\*|\*\/|xp_|0x[0-9a-f]+)/i",   // <-- hapus ; ' "
+        "/(--|\/\*|\*\/|xp_|0x[0-9a-f]+)/i",
         '/\b(OR|AND)\b\s+[\d\'"]=[\d\'"]/i',
         '/sleep\s*\(\s*\d+\s*\)/i',
         '/benchmark\s*\(/i',
@@ -21,7 +21,6 @@ class SecurityFilter implements FilterInterface
     private array $xssPatterns = [
         '/<script[\s\S]*?>[\s\S]*?<\/script>/i',
         '/javascript\s*:/i',
-        '/on\w+\s*=\s*["\'][^"\']*["\']/i',
         '/<iframe|<object|<embed|<applet/i',
         '/eval\s*\(/i',
         '/document\.(cookie|write|location)/i',
@@ -38,6 +37,11 @@ class SecurityFilter implements FilterInterface
         $method  = $request->getMethod();
         $ip      = $request->getIPAddress();
         $ua      = $request->getUserAgent()->getAgentString();
+
+        // Skip filter untuk halaman admin
+        if (strpos($uri, '/admin') !== false) {
+            return null;
+        }
 
         $allInput = array_merge($request->getGet() ?? [], $request->getPost() ?? []);
         $rawInput = json_encode($allInput);
@@ -104,11 +108,10 @@ class SecurityFilter implements FilterInterface
                 $this->notifyAdmin($threat, $severity, $ip, $uri);
             }
 
-            // Kembalikan halaman 403 yang keren
+            // Kembalikan halaman 403
             $response = service('response');
             $response->setStatusCode(403);
 
-            // Render halaman HTML error 403
             $errorPage = APPPATH . 'Views/errors/html/error_403.php';
             if (file_exists($errorPage)) {
                 ob_start();
@@ -117,7 +120,6 @@ class SecurityFilter implements FilterInterface
                 $response->setBody($html);
                 $response->setHeader('Content-Type', 'text/html; charset=UTF-8');
             } else {
-                // Fallback JSON
                 $response->setJSON([
                     'status'  => 'error',
                     'message' => 'Permintaan diblokir karena terdeteksi aktivitas mencurigakan.',
@@ -133,7 +135,6 @@ class SecurityFilter implements FilterInterface
 
     public function after(RequestInterface $request, ResponseInterface $response, $arguments = null)
     {
-        // Security headers
         $response->setHeader('X-Content-Type-Options', 'nosniff');
         $response->setHeader('X-Frame-Options', 'SAMEORIGIN');
         $response->setHeader('X-XSS-Protection', '1; mode=block');
@@ -164,4 +165,4 @@ class SecurityFilter implements FilterInterface
             log_message('error', 'SecurityFilter email: ' . $e->getMessage());
         }
     }
-}
+}           
