@@ -55,6 +55,9 @@ RUN chown -R www-data:www-data /var/www/html \
 
 RUN echo '#!/bin/sh\n\
 cat > /var/www/html/.env << ENVFILE\n\
+cloudinary_cloudName = dftkqdftn\n\
+cloudinary_apiKey = 729417917272812\n\
+cloudinary_apiSecret = 6rNcUzDtm1rPuvF2rYPIfD1bAeU\n\
 CI_ENVIRONMENT = ${CI_ENVIRONMENT:-production}\n\
 app.baseURL = ${app_baseURL:-http://localhost/}\n\
 app.appTimezone = Asia/Jakarta\n\

@@ -14,9 +14,9 @@ class CloudinaryHelper
     {
         Configuration::instance([
             'cloud' => [
-                'cloud_name' => env('cloudinary.cloudName'),
-                'api_key'    => env('cloudinary.apiKey'),
-                'api_secret' => env('cloudinary.apiSecret'),
+                'cloud_name' => env('cloudinary_cloudName', 'dftkqdftn'),
+                'api_key'    => env('cloudinary_apiKey', '729417917272812'),
+                'api_secret' => env('cloudinary_apiSecret', '6rNcUzDtm1rPuvF2rYPIfD1bAeU'),
             ],
             'url' => [
                 'secure' => true
