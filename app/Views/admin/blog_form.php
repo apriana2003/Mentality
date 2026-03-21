@@ -136,8 +136,7 @@ $icons     = ['Stres'=>'bi-wind','Kecemasan'=>'bi-lightning','Depresi'=>'bi-clou
           style="<?= ($isEdit && !empty($blog['gambar'])) ? '' : 'display:none' ?>">
           <div class="position-relative mb-3" style="border-radius:10px;overflow:hidden">
             <img id="imagePreview"
-              src="<?= ($isEdit && !empty($blog['gambar'])) ? base_url('uploads/blogs/' . $blog['gambar']) : '' ?>"
-              alt="Preview"
+              src="<?= ($isEdit && !empty($blog['gambar'])) ? $blog['gambar'] : '' ?>"              alt="Preview"
               style="width:100%;height:160px;object-fit:cover;display:block">
             <button type="button" onclick="removeImage()"
               class="btn btn-sm position-absolute"

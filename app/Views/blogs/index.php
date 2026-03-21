@@ -23,10 +23,9 @@
         <a href="<?= base_url('blogs/' . esc($blog['slug'])) ?>" class="text-decoration-none">
           <div class="blog-card">
             <!-- Gambar atau ikon default -->
-            <?php if ($blog['gambar'] && file_exists(FCPATH . 'uploads/blogs/' . $blog['gambar'])): ?>
-            <div style="height:180px;overflow:hidden">
-              <img src="<?= base_url('uploads/blogs/' . esc($blog['gambar'])) ?>"
-                alt="<?= esc($blog['judul']) ?>"
+              <?php if ($blog['gambar']): ?>
+              <div style="height:180px;overflow:hidden">
+                <img src="<?= esc($blog['gambar']) ?>"                alt="<?= esc($blog['judul']) ?>"
                 style="width:100%;height:100%;object-fit:cover;transition:transform .3s ease"
                 onmouseover="this.style.transform='scale(1.05)'"
                 onmouseout="this.style.transform='scale(1)'">
