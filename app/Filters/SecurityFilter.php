@@ -12,7 +12,7 @@ class SecurityFilter implements FilterInterface
     private array $sqliPatterns = [
         '/(\bUNION\b.*\bSELECT\b|\bSELECT\b.*\bFROM\b|\bDROP\b.*\bTABLE\b)/i',
         '/(\bINSERT\b|\bUPDATE\b|\bDELETE\b|\bTRUNCATE\b).*\bINTO\b/i',
-        "/(--|;|'|\"|\/\*|\*\/|xp_|0x[0-9a-f]+)/i",
+        "/(--|\/\*|\*\/|xp_|0x[0-9a-f]+)/i",   // <-- hapus ; ' "
         '/\b(OR|AND)\b\s+[\d\'"]=[\d\'"]/i',
         '/sleep\s*\(\s*\d+\s*\)/i',
         '/benchmark\s*\(/i',
