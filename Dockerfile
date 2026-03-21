@@ -46,3 +46,4 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/writable
 
 EXPOSE 80
+#docker
