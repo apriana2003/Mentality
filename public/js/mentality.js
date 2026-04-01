@@ -408,46 +408,48 @@ const Chatbot = {
       if (data.token) SesiManager.saveChatToken(data.token);
 
       const msgs = data.messages || [];
+
       if (msgs.length === 0) {
-          const mahasiswa = SesiManager.getMahasiswa();
-          const nama = mahasiswa?.nama ?? null;
+        // Cek apakah ada hasil tes
+        const hasilEl  = document.getElementById('hasilTesData');
+        const hasilTes = hasilEl ? JSON.parse(hasilEl.dataset.hasil) : null;
+        const mahasiswa = SesiManager.getMahasiswa();
 
-          // Cek apakah ada data hasil tes di halaman
-          const hasilEl = document.getElementById('hasilTesData');
-          const hasilTes = hasilEl ? JSON.parse(hasilEl.dataset.hasil) : null;
+        if (hasilTes && data.has_hasil_tes) {
+          // Ada hasil tes — minta AI beri nasihat otomatis
+          this.showTyping();
+          this.isTyping = true;
+          document.getElementById('sendBtn').disabled = true;
 
-          if (hasilTes) {
-              // Ada hasil tes — minta AI beri nasihat langsung
-              this.showTyping();
-              this.isTyping = true;
-              try {
-                  const pesanAwal = nama
-                      ? `Halo ${nama}! Gue udah lihat hasil tes DASS-21 kamu.`
-                      : `Halo! Gue udah lihat hasil tes DASS-21 kamu.`;
-
-                  const res  = await fetch(BASE_URL + 'chatbot/send', {
-                      method  : 'POST',
-                      headers : { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                      body    : JSON.stringify({ message: '__init_with_hasil_tes__' }),
-                  });
-                  const data = await res.json();
-                  this.hideTyping();
-                  this.appendMessage('ai', data.reply || pesanAwal);
-              } catch (err) {
-                  this.hideTyping();
-                  const sapa = nama
-                      ? `Halo ${nama}! 👋 Gue Mentality AI. Ada yang ingin kamu ceritakan?`
-                      : 'Halo! Gue Mentality AI 👋 Ada yang ingin kamu ceritakan?';
-                  this.appendMessage('ai', sapa);
-              } finally {
-                  this.isTyping = false;
-              }
-          } else {
-              const sapa = nama
-                ? `Halo ${nama}! 👋 Gue Mentality AI, teman curhat kamu. Gimana perasaan kamu sekarang?`
-                : 'Halo! Gue Mentality AI 👋 Ceritain aja apa yang lagi kamu rasain sekarang.';
-              this.appendMessage('ai', sapa);
+          try {
+            const res2 = await fetch(BASE_URL + 'chatbot/send', {
+              method  : 'POST',
+              headers : { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+              body    : JSON.stringify({ message: '__init_with_hasil_tes__' }),
+            });
+            const data2 = await res2.json();
+            this.hideTyping();
+            this.appendMessage('ai', data2.reply || 'Halo! Gue udah lihat hasil tes kamu nih 👋');
+          } catch (err) {
+            this.hideTyping();
+            const sapa = mahasiswa
+              ? `Halo ${mahasiswa.nama}! 👋 Gue udah lihat hasil tes kamu. Ada yang mau kamu ceritain?`
+              : 'Halo! 👋 Gue udah lihat hasil tes kamu. Ada yang mau kamu ceritain?';
+            this.appendMessage('ai', sapa);
+          } finally {
+            this.isTyping = false;
+            document.getElementById('sendBtn').disabled = false;
           }
+        } else {
+          // Tidak ada hasil tes — sapa biasa
+          const sapa = mahasiswa
+            ? `Halo ${mahasiswa.nama}! 👋 Gue Mentality AI, teman curhat kamu. Gimana perasaan kamu sekarang?`
+            : 'Halo! Gue Mentality AI 👋 Ceritain aja apa yang lagi kamu rasain sekarang.';
+          this.appendMessage('ai', sapa);
+        }
+      } else {
+        msgs.forEach(m => this.appendMessage(m.role === 'user' ? 'user' : 'ai', m.content, false));
+        container.scrollTop = container.scrollHeight;
       }
     } catch (err) {
       console.error('Chat init error:', err);
@@ -475,6 +477,7 @@ const Chatbot = {
 
     input.value = '';
     input.style.height = 'auto';
+    document.getElementById('suggestionChips').style.display = 'none';
     this.appendMessage('user', msg);
     this.showTyping();
     this.isTyping = true;

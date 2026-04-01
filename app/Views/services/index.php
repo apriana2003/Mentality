@@ -1,101 +1,189 @@
-<!-- SERVICES HEADER -->
-<section class="section-pad-sm" style="background:linear-gradient(135deg,var(--green-dark),var(--green-main))">
-  <div class="container text-center py-4">
-    <div class="section-badge" style="background:rgba(255,255,255,.15);color:white"><i class="bi bi-grid"></i> Layanan Kami</div>
-    <h1 class="text-white fw-bold mt-2" style="font-size:2.2rem">Layanan Kesehatan Mental</h1>
-    <p class="text-white-50 mx-auto" style="max-width:560px">Kenali berbagai masalah kesehatan mental yang umum dialami dan temukan layanan konseling AI yang tepat.</p>
-  </div>
-</section>
+<?php $hasilTes = $hasilTes ?? null; ?>
 
-<!-- MASALAH UMUM -->
-<section class="section-pad">
-  <div class="container">
-    <div class="row justify-content-center mb-5">
-      <div class="col-lg-7 text-center">
-        <div class="section-badge"><i class="bi bi-info-circle"></i> Edukasi</div>
-        <h2 class="section-title mt-2">Masalah Kesehatan Mental Umum</h2>
-        <p class="section-subtitle mx-auto">Klik kartu untuk mempelajari lebih lanjut dan mulai konseling dengan AI.</p>
-      </div>
-    </div>
+<?php if ($hasilTes): ?>
+<div id="hasilTesData" data-hasil='<?= json_encode([
+    "depresi"   => $hasilTes["kategori_depresi"],
+    "kecemasan" => $hasilTes["kategori_kecemasan"],
+    "stres"     => $hasilTes["kategori_stres"],
+    "skor_d"    => $hasilTes["skor_depresi"],
+    "skor_k"    => $hasilTes["skor_kecemasan"],
+    "skor_s"    => $hasilTes["skor_stres"],
+]) ?>' style="display:none"></div>
+<?php endif; ?>
 
-    <div class="row g-4">
-      <?php
-      $layanan = [
-        ['bi-wind','amber','Stres','Tekanan berlebih akibat tuntutan akademik, pekerjaan, atau kehidupan sosial yang melebihi kapasitas koping seseorang.','Stres ringan wajar dialami, namun stres berkepanjangan bisa merusak kesehatan fisik dan mental.'],
-        ['bi-lightning-charge','coral','Gangguan Kecemasan','Kekhawatiran berlebihan, gelisah, atau ketakutan intens yang mengganggu aktivitas sehari-hari tanpa alasan jelas.','Termasuk GAD, panic disorder, dan social anxiety yang sangat umum di kalangan mahasiswa.'],
-        ['bi-cloud-rain','blue','Depresi','Perasaan sedih mendalam, kehilangan minat, dan kelelahan yang berlangsung lebih dari 2 minggu.','Bukan sekadar rasa sedih biasa — depresi adalah kondisi medis yang memerlukan perhatian serius.'],
-        ['bi-bandaid','purple','Trauma & PTSD','Respons psikologis terhadap kejadian yang sangat menyakitkan atau mengancam jiwa.','Bisa muncul setelah kecelakaan, kehilangan, kekerasan, atau peristiwa traumatis lainnya.'],
-        ['bi-graph-down','teal','Gangguan Mood','Perubahan suasana hati yang ekstrem dan tidak terduga, termasuk bipolar disorder.','Memengaruhi energi, aktivitas, dan kemampuan menjalani kehidupan sehari-hari.'],
-        ['bi-dash-circle','green','Sering Blank / Disosiatif','Perasaan terputus dari diri sendiri atau lingkungan, pikiran kosong, atau susah berkonsentrasi.','Sering diabaikan namun bisa menjadi tanda kondisi yang memerlukan perhatian.'],
-        ['bi-people','amber','Hubungan & Keluarga','Konflik dalam hubungan romantis, keluarga, atau pertemanan yang berdampak pada kesehatan mental.','Dukungan sosial sangat penting — masalah hubungan adalah salah satu pemicu stres terbesar.'],
-      ];
-      foreach($layanan as $l): ?>
-      <div class="col-lg-4 col-md-6">
-        <div class="service-card h-100">
-          <div class="card-header-custom" style="background:var(--green-pale)">
-            <i class="bi <?= $l[0] ?>" style="color:var(--green-main);font-size:2.5rem"></i>
-          </div>
-          <div class="card-body">
-            <h5 class="card-title"><?= $l[2] ?></h5>
-            <p class="card-text"><?= $l[3] ?></p>
-            <p class="card-text text-muted" style="font-size:.8rem"><?= $l[4] ?></p>
-            <a href="<?= base_url('services/konseling') ?>" class="card-link">
-              Konsultasi AI <i class="bi bi-arrow-right"></i>
-            </a>
-          </div>
-        </div>
-      </div>
-      <?php endforeach; ?>
+<style>
+body { overflow: hidden; }
+main { height: calc(100vh - 72px); }
 
-      <!-- Tes Mental Card -->
-      <div class="col-lg-4 col-md-6">
-        <div class="service-card h-100" style="background:linear-gradient(135deg,var(--green-dark),var(--green-main));border-color:transparent">
-          <div class="card-header-custom" style="background:rgba(255,255,255,.1)">
-            <i class="bi bi-clipboard2-pulse" style="color:white;font-size:2.5rem"></i>
-          </div>
-          <div class="card-body">
-            <h5 class="card-title text-white">Tes DASS-21</h5>
-            <p class="card-text text-white-50">Tidak yakin apa yang kamu rasakan? Mulai dengan tes terstandarisasi DASS-21 untuk mengetahui kondisi mentalmu.</p>
-            <a href="<?= base_url('form') ?>" class="btn btn-light btn-sm rounded-pill mt-2 fw-bold" style="color:var(--green-main)">
-              <i class="bi bi-play-fill me-1"></i>Mulai Tes
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+@media (max-width: 767px) {
+  body { overflow: hidden; }
+  main { height: calc(100dvh - 60px); }
+  .chat-wrapper { height: calc(100dvh - 60px) !important; }
+  .chat-input-area {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+  #suggestionChips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: .5rem;
+  }
+  #suggestionChips::-webkit-scrollbar { display: none; }
+}
+</style>
 
-<!-- CARA KERJA -->
-<section class="section-pad stats-section">
-  <div class="container">
-    <div class="row justify-content-center mb-5">
-      <div class="col-lg-7 text-center">
-        <div class="section-badge"><i class="bi bi-diagram-3"></i> Alur</div>
-        <h2 class="section-title mt-2">Bagaimana Cara Kerjanya?</h2>
-      </div>
+<div class="chat-wrapper">
+
+  <!-- Header -->
+  <div class="chat-header">
+    <div class="position-relative">
+      <div class="ai-avatar"><i class="bi bi-robot"></i></div>
+      <div class="online-dot"></div>
     </div>
-    <div class="row g-4 justify-content-center">
-      <?php foreach([
-        ['1','bi-person-fill-add','green','Isi Data Diri','Masukkan nama, email, dan informasi dasar. Anonim dan aman.'],
-        ['2','bi-clipboard2-check-fill','teal','Kerjakan Tes DASS-21','Jawab 21 pertanyaan singkat tentang kondisimu 1 minggu terakhir.'],
-        ['3','bi-bar-chart-fill','amber','Lihat Hasil Instan','Skor dan kategori ditampilkan langsung dengan penjelasan lengkap.'],
-        ['4','bi-robot','coral','Chat dengan AI','Diskusikan hasilmu dengan Mentality AI yang sudah tahu kondisimu.'],
-      ] as $step): ?>
-      <div class="col-lg-3 col-md-6">
-        <div class="card-mentality text-center">
-          <div style="width:48px;height:48px;background:var(--green-main);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;margin:0 auto 1rem"><?= $step[0] ?></div>
-          <div class="card-icon <?= $step[2] ?> mx-auto"><i class="bi <?= $step[1] ?>"></i></div>
-          <h6 class="fw-bold mt-3 mb-1"><?= $step[3] ?></h6>
-          <p class="text-muted small mb-0"><?= $step[4] ?></p>
-        </div>
-      </div>
-      <?php endforeach; ?>
+    <div>
+      <div class="fw-bold" style="font-size:.95rem">Mentality AI</div>
+      <div style="font-size:.75rem;opacity:.7">Konselor & Asisten Kesehatan Mental</div>
     </div>
-    <div class="text-center mt-5">
-      <a href="<?= base_url('form') ?>" class="btn btn-primary-custom btn-lg px-5">
-        <i class="bi bi-play-circle-fill me-2"></i>Mulai Sekarang — Gratis
+    <div class="ms-auto d-flex gap-2 align-items-center">
+      <?php if ($hasilTes): ?>
+      <span class="badge d-none d-md-inline-flex" style="background:rgba(255,255,255,.2);font-size:.72rem;font-weight:600;padding:.4rem .8rem;border-radius:50px">
+        <i class="bi bi-clipboard2-check me-1"></i>Data DASS-21 Tersedia
+      </span>
+      <?php endif; ?>
+      <a href="<?= base_url('form') ?>" class="btn btn-sm" style="background:rgba(255,255,255,.15);color:white;border-radius:50px;font-size:.78rem">
+        <i class="bi bi-clipboard2-pulse me-1"></i>Tes Dulu
       </a>
+      <button id="clearChatBtn" onclick="clearChat()" class="btn btn-sm" title="Hapus semua percakapan"
+        style="background:rgba(255,80,80,.25);color:white;border:1px solid rgba(255,100,100,.4);border-radius:50px;font-size:.78rem">
+        <i class="bi bi-trash3 me-1"></i><span class="d-none d-md-inline">Hapus Chat</span>
+      </button>
     </div>
   </div>
-</section>
+
+  <!-- Info DASS jika ada -->
+  <?php if ($hasilTes): ?>
+  <div style="background:var(--green-pale);padding:.75rem 1.5rem;border-bottom:1px solid var(--gray-200)">
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+      <span style="font-size:.8rem;font-weight:700;color:var(--green-main)">
+        <i class="bi bi-info-circle me-1"></i>Hasil tes kamu telah diketahui AI:
+      </span>
+      <?php foreach([
+        ['Depresi',   $hasilTes['kategori_depresi'],   $hasilTes['skor_depresi']],
+        ['Kecemasan', $hasilTes['kategori_kecemasan'], $hasilTes['skor_kecemasan']],
+        ['Stres',     $hasilTes['kategori_stres'],     $hasilTes['skor_stres']],
+      ] as $r): ?>
+      <span class="badge" style="background:white;color:var(--gray-800);border:1px solid var(--gray-200);font-size:.75rem;font-weight:600;padding:.3rem .7rem">
+        <?= $r[0] ?>: <strong class="text-green-main"><?= esc($r[1]) ?></strong> (<?= $r[2] ?>)
+      </span>
+      <?php endforeach; ?>
+    </div>
+  </div>
+  <?php endif; ?>
+
+  <!-- Messages -->
+  <div class="chat-messages" id="chatMessages"></div>
+
+  <!-- Suggestion chips -->
+  <div id="suggestionChips" style="padding:.5rem 1.5rem;display:flex;gap:.5rem;flex-wrap:wrap;background:white;border-top:1px solid var(--gray-200)">
+    <?php foreach([
+      'Apa itu depresi?',
+      'Cara mengatasi kecemasan',
+      'Tips mengurangi stres kuliah',
+      'Kapan harus ke psikolog?',
+    ] as $chip): ?>
+    <button class="btn btn-sm suggestion-chip" onclick="useSuggestion(this)"
+      style="background:var(--green-pale);color:var(--green-main);border:none;border-radius:50px;font-size:.78rem;font-weight:600;padding:.3rem .85rem">
+      <?= esc($chip) ?>
+    </button>
+    <?php endforeach; ?>
+  </div>
+
+  <!-- Input area -->
+  <div class="chat-input-area">
+    <div class="chat-input-wrap">
+      <textarea
+        id="chatInput"
+        class="chat-input overflow-y-hidden"
+        placeholder="Ketik pesanmu di sini... (Enter = kirim, Shift+Enter = baris baru)"
+        rows="1"
+      ></textarea>
+      <button id="sendBtn" class="chat-send-btn" title="Kirim pesan">
+        <i class="bi bi-send-fill"></i>
+      </button>
+    </div>
+    <p class="text-muted text-center mt-2 mb-0" style="font-size:.72rem">
+      <i class="bi bi-shield-lock me-1"></i>Percakapan ini aman & anonim. AI bukan pengganti psikiater profesional.
+    </p>
+  </div>
+
+</div>
+
+<!-- Modal Konfirmasi Hapus Chat -->
+<div class="modal fade" id="modalHapusChat" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content rounded-4 border-0 shadow-lg">
+      <div class="modal-body text-center p-4">
+        <div style="width:56px;height:56px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">
+          <i class="bi bi-trash3-fill text-danger fs-4"></i>
+        </div>
+        <h6 class="fw-bold mb-1">Hapus Semua Percakapan?</h6>
+        <p class="text-muted small mb-4">Riwayat chat akan dihapus permanen dan tidak bisa dikembalikan.</p>
+        <div class="d-flex gap-2">
+          <button class="btn btn-light flex-fill rounded-3" data-bs-dismiss="modal">Batal</button>
+          <button class="btn btn-danger flex-fill rounded-3" id="confirmClearBtn" onclick="confirmClearChat()">
+            <i class="bi bi-trash3 me-1"></i>Hapus
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function useSuggestion(btn) {
+  const input = document.getElementById('chatInput');
+  input.value = btn.textContent.trim();
+  document.getElementById('suggestionChips').style.display = 'none';
+  input.focus();
+  Chatbot.send();
+}
+
+function clearChat() {
+  new bootstrap.Modal(document.getElementById('modalHapusChat')).show();
+}
+
+async function confirmClearChat() {
+  const btn = document.getElementById('confirmClearBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Menghapus...';
+
+  try {
+    const res = await fetch(BASE_URL + 'chatbot/clear', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      bootstrap.Modal.getInstance(document.getElementById('modalHapusChat')).hide();
+      document.getElementById('chatMessages').innerHTML = '';
+      Chatbot.sessionToken = null;
+      Chatbot._initialized = false;
+      document.getElementById('suggestionChips').style.display = 'flex';
+      Chatbot.appendMessage('ai', 'Chat telah dihapus. Halo lagi! 👋 Ada yang ingin kamu ceritakan?');
+    } else {
+      alert('Gagal menghapus chat. Coba lagi.');
+    }
+  } catch (err) {
+    alert('Terjadi kesalahan. Coba lagi.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-trash3 me-1"></i>Hapus';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof Chatbot !== 'undefined' && !Chatbot._initialized) {
+    Chatbot.init();
+  }
+});
+</script>
