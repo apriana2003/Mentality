@@ -4,27 +4,21 @@
 body { overflow: hidden; }
 main { height: calc(100vh - 72px); }
 
-/* Fix mobile chat */
 @media (max-width: 767px) {
   body { overflow: hidden; }
-  main { height: calc(100vh - 60px); }
+  main { height: calc(100dvh - 60px); }
   .chat-wrapper {
-    height: calc(100vh - 60px) !important;
-    display: flex;
-    flex-direction: column;
-  }
-  .chat-messages {
-    flex: 1;
-    overflow-y: auto;
-    min-height: 0;
+    height: calc(100dvh - 60px) !important;
   }
   .chat-input-area {
-    flex-shrink: 0;
-    padding-bottom: env(safe-area-inset-bottom, 12px);
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   }
   #suggestionChips {
-    flex-shrink: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: .5rem;
   }
+  #suggestionChips::-webkit-scrollbar { display: none; }
 }
 </style>
 
