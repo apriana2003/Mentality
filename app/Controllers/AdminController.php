@@ -16,7 +16,7 @@ class AdminController extends BaseController
     // AUTH
     // ══════════════════════════════════════════════════════════
 
-    public function login(): string
+    public function login()
     {
         if (session()->get('admin_logged_in')) return redirect()->to('/admin');
         return view('admin/login', ['title' => 'Login Admin - Mentality']);
