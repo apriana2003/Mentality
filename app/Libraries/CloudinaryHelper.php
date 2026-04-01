@@ -12,14 +12,10 @@ class CloudinaryHelper
 
     public function __construct()
     {
-        $cloudName = env('cloudinary_cloudName') ?: 'dftkqdftn';
-        $apiKey    = env('cloudinary_apiKey')    ?: '729417917272812';
-        $apiSecret = env('cloudinary_apiSecret') ?: '6rNcUzDtm1rPuvF2rYPIfD1bAeU';
-
         $config = new Configuration();
-        $config->cloud->cloudName = $cloudName;
-        $config->cloud->apiKey    = $apiKey;
-        $config->cloud->apiSecret = $apiSecret;
+        $config->cloud->cloudName = 'dftkqdftn';
+        $config->cloud->apiKey    = '729417917272812';
+        $config->cloud->apiSecret = '6rNcUzDtm1rPuvF2rYPIfD1bAeU';
         $config->url->secure      = true;
 
         $this->cloudinary = new Cloudinary($config);
