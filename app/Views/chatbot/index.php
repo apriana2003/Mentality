@@ -3,6 +3,29 @@
 <style>
 body { overflow: hidden; }
 main { height: calc(100vh - 72px); }
+
+/* Fix mobile chat */
+@media (max-width: 767px) {
+  body { overflow: hidden; }
+  main { height: calc(100vh - 60px); }
+  .chat-wrapper {
+    height: calc(100vh - 60px) !important;
+    display: flex;
+    flex-direction: column;
+  }
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .chat-input-area {
+    flex-shrink: 0;
+    padding-bottom: env(safe-area-inset-bottom, 12px);
+  }
+  #suggestionChips {
+    flex-shrink: 0;
+  }
+}
 </style>
 
 <div class="chat-wrapper">
