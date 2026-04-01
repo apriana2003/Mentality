@@ -36,9 +36,14 @@ main { height: calc(100vh - 72px); }
     </div>
     <div class="ms-auto d-flex gap-2 align-items-center">
       <?php if ($hasilTes): ?>
-      <span class="badge d-none d-md-inline-flex" style="background:rgba(255,255,255,.2);font-size:.72rem;font-weight:600;padding:.4rem .8rem;border-radius:50px">
-        <i class="bi bi-clipboard2-check me-1"></i>Data DASS-21 Tersedia
-      </span>
+      <div id="hasilTesData" data-hasil='<?= json_encode([
+          "depresi"   => $hasilTes["kategori_depresi"],
+          "kecemasan" => $hasilTes["kategori_kecemasan"],
+          "stres"     => $hasilTes["kategori_stres"],
+          "skor_d"    => $hasilTes["skor_depresi"],
+          "skor_k"    => $hasilTes["skor_kecemasan"],
+          "skor_s"    => $hasilTes["skor_stres"],
+      ]) ?>' style="display:none"></div>
       <?php endif; ?>
       <a href="<?= base_url('form') ?>" class="btn btn-sm" style="background:rgba(255,255,255,.15);color:white;border-radius:50px;font-size:.78rem">
         <i class="bi bi-clipboard2-pulse me-1"></i>Tes Dulu

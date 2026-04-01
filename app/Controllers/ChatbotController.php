@@ -82,7 +82,41 @@ class ChatbotController extends BaseController
         }
 
         // Sanitasi XSS
+        // Cek apakah ini pesan init hasil tes
+        $isInitMessage = $userMsg === '__init_with_hasil_tes__';
+
+        // Sanitasi XSS
         $userMsg = htmlspecialchars($userMsg, ENT_QUOTES, 'UTF-8');
+
+        // Kalau pesan init, jangan simpan ke database
+        if ($isInitMessage) {
+            $session = $this->chatModel->getByToken($sessionToken ?? '');
+            if (!$session) {
+                $sessionToken = $this->chatModel->createSession(
+                    session()->get('mahasiswa_id'),
+                    session()->get('hasil_tes_id')
+                );
+                session()->set('chat_token', $sessionToken);
+                $session = $this->chatModel->getByToken($sessionToken);
+            }
+
+            $hasilTes = [];
+            if ($session['hasil_tes_id']) {
+                $hasilTes = $this->hasilModel->find($session['hasil_tes_id']) ?? [];
+            }
+
+            // Buat pesan khusus untuk AI
+            $userMsg = 'Berikan salam pembuka dan analisis singkat hasil tes DASS-21 saya, lalu berikan nasihat dan motivasi yang personal berdasarkan skor tersebut.';
+
+            $history = [['role' => 'user', 'content' => $userMsg]];
+            $ai      = new OpenAIClient();
+            $aiReply = $ai->chat($history, $hasilTes);
+
+            // Simpan hanya balasan AI
+            $this->chatModel->addMessage($session['id'], 'assistant', $aiReply);
+
+            return $this->response->setJSON(['reply' => $aiReply]);
+        }
 
         // Buat session jika belum ada
         $sessionToken = session()->get('chat_token');
