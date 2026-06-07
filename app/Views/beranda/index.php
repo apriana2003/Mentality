@@ -7,7 +7,7 @@
   <div class="container position-relative" style="z-index:1">
     <div class="row align-items-center g-5">
       <div class="col-lg-6">
-        <div class="section-badge"><i class="bi bi-heart-pulse"></i> Platform Monitoring Kesehatan Mental Mahasiswa STMIK TIME</div>
+        <div class="section-badge"><i class="bi bi-heart-pulse"></i> Platform Monitoring Kesehatan Mental</div>
         <h1 class="hero-title mt-2">
           Jaga <span class="highlight">Kesehatan Mental</span><br>Mulai dari Sekarang
         </h1>
@@ -165,10 +165,10 @@
           <div class="blog-card">
 
             <!-- ── Gambar atau icon default ── -->
-            <?php if (!empty($blog['gambar']) && file_exists(FCPATH . 'uploads/blogs/' . $blog['gambar'])): ?>
+            <?php if (!empty($blog['gambar'])): ?>
             <div style="height:180px;overflow:hidden">
               <img
-                src="<?= base_url('uploads/blogs/' . esc($blog['gambar'])) ?>"
+                src="<?= esc($blog['gambar']) ?>"
                 alt="<?= esc($blog['judul']) ?>"
                 style="width:100%;height:100%;object-fit:cover;transition:transform .3s ease"
                 onmouseover="this.style.transform='scale(1.05)'"
