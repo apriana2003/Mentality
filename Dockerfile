@@ -1,5 +1,6 @@
 FROM php:8.2-fpm
 
+# Install dependensi sistem dan ekstensi PHP yang dibutuhkan CodeIgniter 4
 RUN apt-get update -y && apt-get install -y --no-install-recommends \
     libzip-dev \
     libonig-dev \
@@ -13,19 +14,20 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
         pdo \
         pdo_mysql \
         mysqli \
-        mbstring \
-        zip \
         intl \
+        zip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Ambil Composer versi 2 terbaru
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-RUN echo 'client_max_body_size 10M;\n\
-server { \n\
+# Buat konfigurasi Nginx Virtual Host untuk CodeIgniter 4 (Menghindari masalah \n)
+RUN echo 'server { \n\
     listen 80; \n\
     root /var/www/html/public; \n\
     index index.php index.html; \n\
+    client_max_body_size 10M; \n\
     location / { \n\
         try_files $uri $uri/ /index.php?$query_string; \n\
     } \n\
@@ -33,8 +35,6 @@ server { \n\
         fastcgi_pass 127.0.0.1:9000; \n\
         fastcgi_index index.php; \n\
         fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \n\
-        fastcgi_param PATH_INFO $fastcgi_path_info; \n\
-        fastcgi_split_path_info ^(.+\.php)(/.+)$; \n\
         include fastcgi_params; \n\
     } \n\
     location ~ /\.ht { \n\
@@ -44,15 +44,18 @@ server { \n\
 
 WORKDIR /var/www/html
 
+# Optimasi Cache Layer Composer
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
 
+# Salin seluruh source code project
 COPY . .
-RUN composer run-script post-install-cmd --no-interaction || true
 
+# Berikan izin akses penuh ke folder writable untuk session dan logging CI4
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/writable
+    && chmod -R 775 /var/www/html/writable
 
+# Buat skrip startup untuk generate .env secara dinamis dari variable Railway
 RUN echo '#!/bin/sh\n\
 cat > /var/www/html/.env << ENVFILE\n\
 cloudinary_cloudName = dftkqdftn\n\
