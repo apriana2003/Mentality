@@ -18,6 +18,8 @@ class App extends BaseConfig
      */
     public string $baseURL = 'https://mentality.up.railway.app/';
 
+    public bool $forceGlobalSecureRequests = true; // paksa HTTPS
+
     /**
      * Allowed Hostnames in the Site URL other than the hostname in the baseURL.
      * If you want to accept multiple Hostnames, set this.
@@ -157,7 +159,6 @@ class App extends BaseConfig
      * secure, the user will be redirected to a secure version of the page
      * and the HTTP Strict Transport Security (HSTS) header will be set.
      */
-    public bool $forceGlobalSecureRequests = false;
 
     /**
      * --------------------------------------------------------------------------

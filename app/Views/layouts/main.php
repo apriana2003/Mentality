@@ -13,6 +13,7 @@
   <script>
     const BASE_URL = '<?= base_url() ?>';
   </script>
+   <?= base_url() ?>
 </head>
 <body>
 
